@@ -19,7 +19,7 @@ public class DungeonInstanceManager {
         DungeonInstanceState instance = new DungeonInstanceState(instanceId, lotId, dungeonKey, ownerId, DungeonInstanceState.InstanceStatus.PENDING);
         instances.put(instanceId, instance);
         return instance;
-    }
+    } //create new instance with id
 
     public DungeonInstanceState getInstance(String instanceId) {
         return instances.get(instanceId);
@@ -32,5 +32,9 @@ public class DungeonInstanceManager {
         }
         lotManager.releaseLot(instance.getInstanceId());
         return true;
-    }
+    } //remove instance
+
+    public boolean hasOccupiedInstance() {
+        return !instances.isEmpty();
+    } //check for occupied/pending lot
 }

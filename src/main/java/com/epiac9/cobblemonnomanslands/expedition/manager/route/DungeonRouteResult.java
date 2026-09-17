@@ -7,6 +7,7 @@ public class DungeonRouteResult {
     private final String reason;
     private final String pendingInstanceId;
     private final Integer lotId;
+    //tracking route Id
 
     public DungeonRouteResult(boolean accepted, String routeId, String dungeonKey, String reason, String pendingInstanceId, Integer lotId) {
         this.accepted = accepted;

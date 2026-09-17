@@ -9,6 +9,7 @@ public class DungeonLotManager {
     private final int lotCount;
     private final Set<Integer> availableLot;
     private final Map<String, Integer> pendingInstanceToLot;
+    //tracking lot
 
     public DungeonLotManager(int lotCount) {
         if (lotCount <= 0) {
@@ -20,14 +21,6 @@ public class DungeonLotManager {
         for (int i = 0; i < this.lotCount; i++) {
             this.availableLot.add(i);
         }
-    }
-
-    public int getLotCount() {
-        return this.lotCount;
-    }
-
-    public boolean hasAvailableLot() {
-        return !availableLot.isEmpty();
     }
 
     public Integer reserveLot(String pendingInstanceId) {
@@ -44,7 +37,7 @@ public class DungeonLotManager {
         availableLot.remove(lot);
         pendingInstanceToLot.put(pendingInstanceId, lot);
         return lot;
-    }
+    } //tracking available lot for dungeon generation
 
     public boolean releaseLot(String pendingInstanceId) {
         if (pendingInstanceId == null || pendingInstanceId.isBlank()) {
@@ -56,12 +49,20 @@ public class DungeonLotManager {
         }
         availableLot.add(lot);
         return true;
-    }
+    } //marking lot for clean up
 
     public Integer getLotforInstance(String pendingInstanceId) {
         if (pendingInstanceId == null || pendingInstanceId.isBlank()) {
             return null;
         }
         return pendingInstanceToLot.get(pendingInstanceId);
-    }
+    } //prepare lot for new instance
+
+    public int getLotCount() {
+        return this.lotCount;
+    } //update lot count
+
+    public boolean hasAvailableLot() {
+        return !availableLot.isEmpty();
+    } //mark lot as available
 }

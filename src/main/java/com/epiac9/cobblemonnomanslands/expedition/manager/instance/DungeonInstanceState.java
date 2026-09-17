@@ -8,6 +8,7 @@ public class DungeonInstanceState {
     private final String dungeonKey;
     private final UUID ownerId;
     private InstanceStatus status;
+    //get instance id
 
     public DungeonInstanceState(String instanceId, int lotId, String dungeonKey, UUID ownerId, InstanceStatus status) {
         this.instanceId = instanceId;
@@ -42,5 +43,5 @@ public class DungeonInstanceState {
         ACTIVE,
         COMPLETED,
         RESETTING
-    }
+    } //marking status of instance
 }

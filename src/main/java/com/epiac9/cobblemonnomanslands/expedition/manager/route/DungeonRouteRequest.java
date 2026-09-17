@@ -11,6 +11,7 @@ public class DungeonRouteRequest {
     private final int requiredPower;
     private final int minPartySize;
     private final int maxPartySize;
+    //hold route info
 
     public DungeonRouteRequest(UUID ownerID, String dungeonKey, int difficulty, int timerSeconds,
                                RouteMode mode, int requiredPower, int minPartySize, int maxPartySize) {

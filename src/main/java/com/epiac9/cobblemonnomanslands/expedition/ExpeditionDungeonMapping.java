@@ -10,13 +10,13 @@ public class ExpeditionDungeonMapping {
 
     public ExpeditionDungeonMapping(Map<ResourceLocation, String> expeditionToDungeon) {
         this.expeditionToDungeon = new HashMap<>(expeditionToDungeon);
-    }
+    } //map Cobblemon Expedition expeditions
 
     public String getDungeonKey(ResourceLocation expeditionId) {
         return expeditionToDungeon.get(expeditionId);
-    }
+    } //return expedition id
 
     public boolean contains(ResourceLocation expeditionId) {
         return expeditionToDungeon.containsKey(expeditionId);
-    }
+    } //validate expedition id
 }

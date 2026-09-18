@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "cobblemonnomanslands:block/marker/starter_structure_marker"
+  }
+}

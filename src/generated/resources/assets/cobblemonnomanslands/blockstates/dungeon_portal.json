@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "cobblemonnomanslands:block/dungeon_portal_inactive"
+    },
+    "active=true": {
+      "model": "cobblemonnomanslands:block/dungeon_portal_active"
+    }
+  }
+}

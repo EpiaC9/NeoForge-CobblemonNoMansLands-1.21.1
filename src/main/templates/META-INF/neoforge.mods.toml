@@ -2,7 +2,7 @@ modLoader="javafml"
 loaderVersion="2"
 license="https://github.com/EpiaC9/NeoForge-CobblemonNoMansLands-1.21.1.git"
 [[mods]]
-modId="cobblemonnml"
+modId="cobblemonnomanslands"
 version="0.0.1"
 displayName="Cobblemon No Mans Lands"
 description='''

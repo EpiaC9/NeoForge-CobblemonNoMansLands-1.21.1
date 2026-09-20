@@ -2,7 +2,7 @@ package com.epiac9.cobblemonnomanslands.expedition.manager.route;
 
 import com.cobblemonexpeditions.data.ExpeditionDefinition;
 import com.epiac9.cobblemonnomanslands.expedition.ExpeditionDungeonMapping;
-import com.epiac9.cobblemonnomanslands.expedition.manager.DungeonLotManager;
+import com.epiac9.cobblemonnomanslands.dungeon.lot.DungeonLotManager;
 import com.epiac9.cobblemonnomanslands.expedition.manager.gate.ExpeditionGatePolicy;
 import com.epiac9.cobblemonnomanslands.expedition.manager.instance.DungeonInstanceManager;
 

@@ -1,0 +1,18 @@
+{
+  "type": "cobblemonnomanslands:dungeon",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [
+        {
+          "height": 384,
+          "block": "cobblemonnomanslands:dungeon_boundary"
+        }
+      ],
+      "biome": "minecraft:plains",
+      "lakes": [],
+      "features": false,
+      "structure_overrides": []
+    }
+  }
+}

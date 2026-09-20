@@ -18,6 +18,8 @@ public class ModItems {
             () -> new BlockItem(ModBlocks.EXPEDITION_BOARD_MARKER.get(), new Item.Properties()));
     public static final DeferredItem<BlockItem> STARTER_STRUCTURE_MARKER_ITEM = ITEMS.register("starter_structure_marker_item",
             () -> new BlockItem(ModBlocks.STARTER_STRUCTURE_MARKER.get(), new Item.Properties()));
+    public static final DeferredItem<BlockItem> DUNGEON_BOUNDARY_ITEM = ITEMS.register("dungeon_boundary_item",
+            () -> new BlockItem(ModBlocks.DUNGEON_BOUNDARY.get(), new Item.Properties()));
 
     private ModItems() {
     }

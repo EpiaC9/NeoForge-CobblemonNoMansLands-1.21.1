@@ -17,10 +17,12 @@ public class ModLanguageProvider extends LanguageProvider {
         add("block.cobblemonnomanslands.dungeon_portal_marker", "Dungeon Portal Marker");
         add("block.cobblemonnomanslands.expedition_board_marker", "Expedition Board Marker");
         add("block.cobblemonnomanslands.starter_structure_marker", "Starter Structure Marker");
+        add("block.cobblemonnomanslands.dungeon_boundary", "Dungeon Boundary");
 
         add("item.cobblemonnomanslands.dungeon_portal_item", "Dungeon Portal");
         add("item.cobblemonnomanslands.dungeon_portal_marker_item", "Dungeon Portal Marker");
         add("item.cobblemonnomanslands.expedition_board_marker", "Expedition Board Marker");
         add("item.cobblemonnomanslands.starter_structure_marker", "Starter Structure Marker");
+        add("item.cobblemonnomanslands.dungeon_boundary", "Dungeon Boundary");
     }
 }

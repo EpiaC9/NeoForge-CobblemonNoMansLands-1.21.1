@@ -1,6 +1,6 @@
 package com.epiac9.cobblemonnomanslands.expedition.manager.route;
 
-import com.epiac9.cobblemonnomanslands.expedition.manager.DungeonLotManager;
+import com.epiac9.cobblemonnomanslands.dungeon.lot.DungeonLotManager;
 
 import java.util.Set;
 import java.util.UUID;

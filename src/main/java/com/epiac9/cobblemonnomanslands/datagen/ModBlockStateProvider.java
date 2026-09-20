@@ -48,5 +48,8 @@ public class ModBlockStateProvider extends BlockStateProvider{
 
         ModelFile markerSpawn = models().cubeAll("starter_structure_marker", modLoc("block/marker/starter_structure_marker"));
         simpleBlock(ModBlocks.STARTER_STRUCTURE_MARKER.get(), markerSpawn);
+
+        ModelFile dungeonBoundary = models().cubeAll("dungeon_boundary", mcLoc("block/bedrock"));
+        simpleBlock(ModBlocks.DUNGEON_BOUNDARY.get(), dungeonBoundary);
     }
 }

@@ -110,7 +110,7 @@ dependencies {
     implementation files("libs/fightorflight-neoforge-0.11.0.jar")
 
     // Cobblemon Expeditions 1.6.4 NeoForge
-    implementation "curse.maven:cobblemon-expeditions-1470428:8888507"
+    implementation "curse.maven:cobblemon-expeditions-1470428:8926722"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

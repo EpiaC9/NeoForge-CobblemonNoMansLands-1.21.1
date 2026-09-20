@@ -1,4 +1,4 @@
-package com.epiac9.cobblemonnomanslands.expedition.manager;
+package com.epiac9.cobblemonnomanslands.dungeon.lot;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,12 +51,21 @@ public class DungeonLotManager {
         return true;
     } //marking lot for clean up
 
-    public Integer getLotforInstance(String pendingInstanceId) {
+    public Integer getLotForInstance(String pendingInstanceId) {
         if (pendingInstanceId == null || pendingInstanceId.isBlank()) {
             return null;
         }
         return pendingInstanceToLot.get(pendingInstanceId);
     } //prepare lot for new instance
+
+    public DungeonLot getDungeonLotForInstance(String pendingInstanceId) {
+        Integer lotId = getLotForInstance(pendingInstanceId);
+        if (lotId == null) {
+            return null;
+        }
+
+        return DungeonLotRegistry.get(lotId);
+    }
 
     public int getLotCount() {
         return this.lotCount;

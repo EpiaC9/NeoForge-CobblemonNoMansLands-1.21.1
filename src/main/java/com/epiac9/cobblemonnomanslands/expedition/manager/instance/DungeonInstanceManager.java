@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.epiac9.cobblemonnomanslands.expedition.manager.DungeonLotManager;
+import com.epiac9.cobblemonnomanslands.dungeon.lot.DungeonLotManager;
 
 public class DungeonInstanceManager {
     private final Map<String, DungeonInstanceState> instances;

@@ -9,51 +9,51 @@ description='''
 Main mod for Cobblemon No Man's Land modpack. Recreating Vault Hunters gameplay with Cobblemon mechanics and No Man's Land (by Farcr) aesthetics
 '''
 
-[[dependencies.${mod_id}]]
+[[dependencies.cobblemonnml]]
     modId="cobblemon"
     type="required"
-    versionRange="[1.8,)"
+    versionRange="[1.8.1,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.${mod_id}]]
+[[dependencies.cobblemonnml]]
     modId="cobblemontrialsedition"
     type="required"
     versionRange="[2.2,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.${mod_id}]]
+[[dependencies.cobblemonnml]]
+    modId="cobblemon_expeditions"
+    type="required"
+    versionRange="[1.8.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.cobblemonnml]]
     modId="easy_npc"
     type="required"
     versionRange="[7.12.1,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.${mod_id}]]
+[[dependencies.cobblemonnml]]
     modId="easy_npc_config_ui"
     type="required"
     versionRange="[7.12.1,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.${mod_id}]]
+[[dependencies.cobblemonnml]]
     modId="architectury"
     type="required"
     versionRange="[13.0.11,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.${mod_id}]]
+[[dependencies.cobblemonnml]]
     modId="fightorflight"
     type="required"
     versionRange="[0.11.0,)"
-    ordering="AFTER"
-    side="BOTH"
-
-[[dependencies.${mod_id}]]
-    modId="cobblemon_expeditions"
-    type="required"
-    versionRange="[1.6.4,)"
     ordering="AFTER"
     side="BOTH"

@@ -5,6 +5,7 @@ import com.epiac9.cobblemonnomanslands.portal.anchor.PortalAnchorState;
 import net.minecraft.core.BlockPos;
 
 import java.util.List;
+import java.util.Comparator;
 
 public record RoomConnection(RoomMarkerBlock.RoomData roomData, List<PortalAnchorState> portals) {
     public RoomConnection {
@@ -36,8 +37,22 @@ public record RoomConnection(RoomMarkerBlock.RoomData roomData, List<PortalAncho
                 .findFirst().orElse(null);
     }
 
+    public PortalAnchorState findPortalByInstanceId(String instanceId) {
+        if (instanceId == null) {
+            return null;
+        }
+        return portals.stream()
+                .filter(portal -> instanceId.equals(portal.getInstanceId()))
+                .findFirst()
+                .orElse(null);
+    }
+
     public PortalAnchorState findAvailablePortal() {
-        return portals.stream().filter(portal -> !portal.isActive())
+        return portals.stream()
+            .filter(portal -> !portal.isActive())
+            .sorted(Comparator.comparingInt((PortalAnchorState portal) -> portal.getCenter().getX())
+                .thenComparingInt(portal -> portal.getCenter().getY())
+                .thenComparingInt(portal -> portal.getCenter().getZ()))
                 .findFirst().orElse(null);
     }
 

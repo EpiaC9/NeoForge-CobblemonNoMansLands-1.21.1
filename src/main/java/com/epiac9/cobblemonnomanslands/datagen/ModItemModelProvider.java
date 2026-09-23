@@ -16,6 +16,5 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent("dungeon_portal_marker_item", modLoc("block/dungeon_portal_marker"));
         withExistingParent("expedition_board_marker_item", modLoc("block/expedition_board_marker"));
         withExistingParent("starter_structure_marker_item", modLoc("block/starter_structure_marker"));
-        withExistingParent("dungeon_boundary_item", modLoc("block/dungeon_boundary"));
     }
 }

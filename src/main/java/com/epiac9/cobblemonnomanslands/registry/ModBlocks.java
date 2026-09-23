@@ -1,7 +1,6 @@
 package com.epiac9.cobblemonnomanslands.registry;
 
 import com.epiac9.cobblemonnomanslands.CobblemonNoMansLands;
-import com.epiac9.cobblemonnomanslands.dimension.DungeonBoundaryBlock;
 import com.epiac9.cobblemonnomanslands.marker.base.BoardMarkerBlock;
 import com.epiac9.cobblemonnomanslands.marker.room.StarterStructureMarker;
 import com.epiac9.cobblemonnomanslands.portal.DungeonPortalBlock;
@@ -27,9 +26,6 @@ public class ModBlocks {
     public static final DeferredBlock<Block> STARTER_STRUCTURE_MARKER = BLOCKS.register("starter_structure_marker",
             () -> new StarterStructureMarker(BlockBehaviour.Properties.of()
                     .strength(-1.0f, 3600000.0f).noOcclusion()));
-    public static final DeferredBlock<Block> DUNGEON_BOUNDARY = BLOCKS.register("dungeon_boundary",
-            () -> new DungeonBoundaryBlock(BlockBehaviour.Properties.of()
-                    .strength(-1.0f, 3600000.0f).noLootTable()));
 
     private ModBlocks() {
     }

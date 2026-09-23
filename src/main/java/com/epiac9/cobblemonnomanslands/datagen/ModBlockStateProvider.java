@@ -21,23 +21,6 @@ public class ModBlockStateProvider extends BlockStateProvider{
                 .element().from(0,0,0).to(16,10,16).allFaces(
                         (direction, faceBuilder) -> faceBuilder.texture("#all"))
                 .end();
-        ModelFile activeModel = models().withExistingParent("dungeon_portal_active", "minecraft:block/block")
-                .texture("all", modLoc("block/portal/dungeon_portal_active"))
-                .texture("particle", modLoc("block/portal/dungeon_portal_active"))
-                .element().from(0, 0, 0).to(16, 10, 16).allFaces(
-                        (direction, faceBuilder) -> faceBuilder.texture("#all"))
-                .end();
-        getVariantBuilder(ModBlocks.DUNGEON_PORTAL.get())
-                .partialState()
-                .with(DungeonPortalBlock.ACTIVE, false)
-                .modelForState()
-                .modelFile(inactiveModel)
-                .addModel()
-                .partialState()
-                .with(DungeonPortalBlock.ACTIVE, true)
-                .modelForState()
-                .modelFile(activeModel)
-                .addModel();
         simpleBlockItem(ModBlocks.DUNGEON_PORTAL.get(), inactiveModel);
 
         ModelFile markerPortal = models().cubeAll("dungeon_portal_marker", modLoc("block/marker/dungeon_portal_marker"));
@@ -48,8 +31,5 @@ public class ModBlockStateProvider extends BlockStateProvider{
 
         ModelFile markerSpawn = models().cubeAll("starter_structure_marker", modLoc("block/marker/starter_structure_marker"));
         simpleBlock(ModBlocks.STARTER_STRUCTURE_MARKER.get(), markerSpawn);
-
-        ModelFile dungeonBoundary = models().cubeAll("dungeon_boundary", mcLoc("block/bedrock"));
-        simpleBlock(ModBlocks.DUNGEON_BOUNDARY.get(), dungeonBoundary);
     }
 }

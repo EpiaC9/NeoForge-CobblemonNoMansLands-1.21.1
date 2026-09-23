@@ -1,6 +1,7 @@
 package com.epiac9.cobblemonnomanslands;
 
 import com.epiac9.cobblemonnomanslands.datagen.ModDataGenerators;
+import com.epiac9.cobblemonnomanslands.network.ModNetwork;
 import com.epiac9.cobblemonnomanslands.registry.ModBlocks;
 import com.epiac9.cobblemonnomanslands.registry.ModCreativeTabs;
 import com.epiac9.cobblemonnomanslands.registry.ModItems;
@@ -17,5 +18,6 @@ public class CobblemonNoMansLands {
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         ModDataGenerators.register(modEventBus);
+        modEventBus.addListener(ModNetwork::register);
     }
 }

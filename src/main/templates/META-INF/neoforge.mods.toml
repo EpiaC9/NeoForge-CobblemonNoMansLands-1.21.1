@@ -9,6 +9,9 @@ description='''
 Main mod for Cobblemon No Man's Land modpack. Recreating Vault Hunters gameplay with Cobblemon mechanics and No Man's Land (by Farcr) aesthetics
 '''
 
+[[mixins]]
+config="mixins.cobblemonnomanslands.json"
+
 [[dependencies.cobblemonnml]]
     modId="cobblemon"
     type="required"

@@ -1,36 +1,46 @@
 package com.epiac9.cobblemonnomanslands.portal.runtime;
 
-import com.epiac9.cobblemonnomanslands.dimension.generation.DungeonGenerationQueue;
+import com.epiac9.cobblemonnomanslands.dimension.ExpeditionResourceReplenishmentService;
+import com.epiac9.cobblemonnomanslands.expedition.dimension.ExpeditionDimensionMapping;
+import com.epiac9.cobblemonnomanslands.expedition.manager.route.InitialExpeditionMappings;
+import com.epiac9.cobblemonnomanslands.expedition.selection.ExplorationSelectionService;
 import com.epiac9.cobblemonnomanslands.portal.ExpeditionPortalCoordinator;
 import com.epiac9.cobblemonnomanslands.structure.WorldSpawnStructureService;
 import com.epiac9.cobblemonnomanslands.structure.connection.RoomConnectionRegistry;
-
-import java.util.Set;
+import com.epiac9.cobblemonnomanslands.expedition.stats.ExplorationPlayerStatsService;
+import net.minecraft.server.level.ServerLevel;
 
 public class PortalSystemRuntime {
     private final ExpeditionPortalCoordinator coordinator;
-    private final DungeonGenerationQueue generationQueue;
+    private final ExpeditionResourceReplenishmentService resourceReplenishmentService;
+    private final ExplorationSelectionService explorationSelectionService;
+    private final ExplorationPlayerStatsService playerStatsService;
 
     public PortalSystemRuntime() {
-        Set<String> validDungeon = Set.of(
-                "nml_berry_grove",
-                "nml_forest",
-                "nml_shoreline",
-                "nml_cavern",
-                "nml_volcanic",
-                "nml_deep_sea",
-                "nml_frozen_ruins",
-                "nml_distortion_rift"
-        );
+        ExpeditionDimensionMapping mapping = InitialExpeditionMappings.create();
         RoomConnectionRegistry connectionRegistry = WorldSpawnStructureService.getConnectionRegistry();
-        this.coordinator = new ExpeditionPortalCoordinator(4, validDungeon, connectionRegistry);
-        this.generationQueue = new DungeonGenerationQueue();
+        this.coordinator = new ExpeditionPortalCoordinator(mapping, connectionRegistry);
+        this.playerStatsService = new ExplorationPlayerStatsService();
+        this.resourceReplenishmentService = new ExpeditionResourceReplenishmentService();
+        this.explorationSelectionService = new ExplorationSelectionService(coordinator, playerStatsService);
     } //assign profile ids to portal
 
     public ExpeditionPortalCoordinator getCoordinator() {
         return coordinator;
     }
-    public DungeonGenerationQueue getGenerationQueue() {
-        return generationQueue;
+    public ExpeditionResourceReplenishmentService getResourceReplenishmentService() {
+        return resourceReplenishmentService;
+    }
+
+    public ExplorationSelectionService getExplorationSelectionService() {
+        return explorationSelectionService;
+    }
+
+    public ExplorationPlayerStatsService getPlayerStatsService() {
+        return playerStatsService;
+    }
+
+    public void tick(ServerLevel expeditionLevel) {
+        resourceReplenishmentService.tick(expeditionLevel);
     }
 }

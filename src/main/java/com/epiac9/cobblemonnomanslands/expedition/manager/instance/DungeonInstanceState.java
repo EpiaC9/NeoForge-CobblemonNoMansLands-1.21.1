@@ -4,16 +4,14 @@ import java.util.UUID;
 
 public class DungeonInstanceState {
     private final String instanceId;
-    private final int lotId;
-    private final String dungeonKey;
+    private final String dimensionKey;
     private final UUID ownerId;
     private InstanceStatus status;
     //get instance id
 
-    public DungeonInstanceState(String instanceId, int lotId, String dungeonKey, UUID ownerId, InstanceStatus status) {
+    public DungeonInstanceState(String instanceId, String dimensionKey, UUID ownerId, InstanceStatus status) {
         this.instanceId = instanceId;
-        this.lotId = lotId;
-        this.dungeonKey = dungeonKey;
+        this.dimensionKey = dimensionKey;
         this.ownerId = ownerId;
         this.status = status;
     }
@@ -21,11 +19,8 @@ public class DungeonInstanceState {
     public String getInstanceId() {
         return instanceId;
     }
-    public int getLotId() {
-        return lotId;
-    }
-    public String getDungeonKey() {
-        return dungeonKey;
+    public String getDimensionKey() {
+        return dimensionKey;
     }
     public UUID getOwnerId() {
         return ownerId;

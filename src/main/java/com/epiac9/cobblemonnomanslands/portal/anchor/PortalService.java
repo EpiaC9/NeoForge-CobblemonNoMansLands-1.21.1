@@ -2,44 +2,34 @@ package com.epiac9.cobblemonnomanslands.portal.anchor;
 
 import com.epiac9.cobblemonnomanslands.portal.DungeonPortalBlock;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.Objects;
 
 public class PortalService {
     public void createInactivePortal(ServerLevel level, PortalAnchorState anchor, BlockState inactivePortalState) {
-        if (level == null) {
-            throw new NullPointerException("Level cannot be null");
-        }
-        if (anchor == null) {
-            throw new NullPointerException("Anchor cannot be null");
-        }
-        if (inactivePortalState == null) {
-            throw new NullPointerException("PortalState cannot be null");
-        }
-        for (PortalGeometry.PortalCell portalCell : PortalGeometry.getInteriorPositions(anchor)) {
-            level.setBlock(portalCell.position(), inactivePortalState
-                    .setValue(DungeonPortalBlock.CELL, portalCell.cell())
-                    .setValue(DungeonPortalBlock.ACTIVE, false), 3
-            );
-        }
-        anchor.setActive(false);
-    } //validate authority, anchor and state of portal before placement. Portal must be inactive on place.
+        updatePortal(level, anchor, inactivePortalState, false);
+    }
 
     public void activatePortal(ServerLevel level, PortalAnchorState anchor, BlockState activePortalState) {
-        if (level == null) {
-            throw new NullPointerException("Level cannot be null");
-        }
-        if (anchor == null) {
-            throw new NullPointerException("Anchor cannot be null");
-        }
-        if (activePortalState == null) {
-            throw new NullPointerException("PortalState cannot be null");
-        }
+        updatePortal(level, anchor, activePortalState, true);
+    }
+
+    public void deactivatePortal(ServerLevel level, PortalAnchorState anchor, BlockState inactivePortalState) {
+        updatePortal(level, anchor, inactivePortalState, false);
+    }
+
+    private void updatePortal(ServerLevel level, PortalAnchorState anchor, BlockState portalState, boolean active) {
+        Objects.requireNonNull(level, "Level cannot be null");
+        Objects.requireNonNull(anchor, "Anchor cannot be null");
+        Objects.requireNonNull(portalState, "PortalState cannot be null");
+
         for (PortalGeometry.PortalCell portalCell : PortalGeometry.getInteriorPositions(anchor)) {
-            level.setBlock(portalCell.position(), activePortalState
+            level.setBlock(portalCell.position(), portalState
                     .setValue(DungeonPortalBlock.CELL, portalCell.cell())
-                    .setValue(DungeonPortalBlock.ACTIVE, true), 3
-            );
+                    .setValue(DungeonPortalBlock.ACTIVE, active), Block.UPDATE_ALL);
         }
-        anchor.setActive(true);
-    } //set portal to active
+        anchor.setActive(active);
+    }
 }

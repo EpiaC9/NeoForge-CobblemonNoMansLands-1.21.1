@@ -1,13 +1,13 @@
 package com.epiac9.cobblemonnomanslands.expedition.manager.gate;
 
 import com.cobblemonexpeditions.data.ExpeditionDefinition;
-import com.epiac9.cobblemonnomanslands.expedition.ExpeditionDungeonMapping;
+import com.epiac9.cobblemonnomanslands.expedition.dimension.ExpeditionDimensionMapping;
 
 public class ExpeditionGatePolicy {
     private static final int PARTY_CAP = 6;
-    private final ExpeditionDungeonMapping mapping;
+    private final ExpeditionDimensionMapping mapping;
 
-    public ExpeditionGatePolicy(ExpeditionDungeonMapping mapping) {
+    public ExpeditionGatePolicy(ExpeditionDimensionMapping mapping) {
         if (mapping == null) {
             throw new NullPointerException("Mapping cannot be null");
         }

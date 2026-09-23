@@ -1,10 +1,8 @@
 {
-  "block.cobblemonnomanslands.dungeon_boundary": "Dungeon Boundary",
   "block.cobblemonnomanslands.dungeon_portal": "Dungeon Portal",
   "block.cobblemonnomanslands.dungeon_portal_marker": "Dungeon Portal Marker",
   "block.cobblemonnomanslands.expedition_board_marker": "Expedition Board Marker",
   "block.cobblemonnomanslands.starter_structure_marker": "Starter Structure Marker",
-  "item.cobblemonnomanslands.dungeon_boundary": "Dungeon Boundary",
   "item.cobblemonnomanslands.dungeon_portal_item": "Dungeon Portal",
   "item.cobblemonnomanslands.dungeon_portal_marker_item": "Dungeon Portal Marker",
   "item.cobblemonnomanslands.expedition_board_marker": "Expedition Board Marker",

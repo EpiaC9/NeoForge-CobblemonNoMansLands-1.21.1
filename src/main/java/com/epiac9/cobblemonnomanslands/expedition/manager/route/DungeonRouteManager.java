@@ -1,64 +1,48 @@
 package com.epiac9.cobblemonnomanslands.expedition.manager.route;
 
-import com.epiac9.cobblemonnomanslands.dungeon.lot.DungeonLotManager;
-
 import java.util.Set;
 import java.util.UUID;
 import com.epiac9.cobblemonnomanslands.expedition.manager.instance.DungeonInstanceManager;
 
 public class DungeonRouteManager {
-    private final Set<String> validDungeon;
+    private final Set<String> validDimensions;
 
-    public DungeonRouteManager(Set<String> validDungeon) {
-        this.validDungeon = validDungeon;
+    public DungeonRouteManager(Set<String> validDimensions) {
+        this.validDimensions = validDimensions;
     }
 
-    public DungeonRouteResult route(DungeonRouteRequest request, DungeonLotManager lotManager, DungeonInstanceManager instanceManager) {
+    public DungeonRouteResult route(DungeonRouteRequest request, DungeonInstanceManager instanceManager) {
         if (request == null) {
-            return new DungeonRouteResult(false,null, null, "Route request was null.", null, null);
+            return DungeonRouteResult.rejected("Route request was null.");
         } //validate request
         if (request.getOwnerID() == null) {
-            return new DungeonRouteResult(false,null, request.getDungeonKey(), "Owner ID was null.", null, null);
+            return DungeonRouteResult.rejected(request.getDimensionKey(), "Owner ID was null.");
         } //validate owner
-        if (request.getDungeonKey() == null || request.getDungeonKey().isBlank()) {
-            return new DungeonRouteResult(false,null, null, "Dungeon Key was null.", null, null);
+        if (request.getDimensionKey() == null || request.getDimensionKey().isBlank()) {
+            return DungeonRouteResult.rejected("Dimension Key was null.");
         } //validate dungeon key
         if (request.getMode() == null) {
-            return new DungeonRouteResult(false,null, null, "Mode was null.", null, null);
+            return DungeonRouteResult.rejected("Mode was null.");
         } //validate mode
-        if (!validDungeon.contains(request.getDungeonKey())) {
-            return new DungeonRouteResult(false,null, request.getDungeonKey(), "Invalid Dungeon Key.", null, null);
-        } //dungeon key is not valid
+        if (!validDimensions.contains(request.getDimensionKey())) {
+            return DungeonRouteResult.rejected(request.getDimensionKey(), "Invalid Dimension Key.");
+        } //dimension key is not valid
         if (request.getDifficulty() < 1) {
-            return new DungeonRouteResult(false,null, null, "Difficulty was negative.", null, null);
+            return DungeonRouteResult.rejected("Difficulty was negative.");
         } //validate difficulty
         if (request.getTimerSeconds() <= 0) {
-            return new DungeonRouteResult(false,null, null, "TimerSeconds was negative.", null, null);
+            return DungeonRouteResult.rejected("TimerSeconds was negative.");
         } //validate timer
-        if (lotManager == null) {
-            return new DungeonRouteResult(false,null, null, "Lot Manager was null.", null, null);
-        } //validate existing lot
         if (instanceManager == null) {
-            return new DungeonRouteResult(false,null, null, "Instance Manager was null.", null, null);
+            return DungeonRouteResult.rejected("Instance Manager was null.");
         } //validate instance
         if (instanceManager.hasOccupiedInstance()) {
-            return new DungeonRouteResult(false,null, request.getDungeonKey(), "Instance already exists.", null, null);
+            return DungeonRouteResult.rejected(request.getDimensionKey(), "Instance already exists.");
         } //validate existing instance
         String pendingInstanceId = UUID.randomUUID().toString();
-        Integer lot = lotManager.reserveLot(pendingInstanceId);
-        if (lot == null) {
-            return new DungeonRouteResult(false,null, null, "Lot was null.", null, null);
-        } //lot is full or can't be found
         String routeId = UUID.randomUUID().toString();
-        instanceManager.createInstance(pendingInstanceId, lot, request.getDungeonKey(), request.getOwnerID());
-        return new DungeonRouteResult(
-                true,
-                routeId,
-                request.getDungeonKey(),
-                "Route accepted",
-                pendingInstanceId,
-                lot
-        ); //result
+        instanceManager.createInstance(pendingInstanceId, request.getDimensionKey(), request.getOwnerID());
+        return DungeonRouteResult.accepted(routeId, request.getDimensionKey(), pendingInstanceId);
     }
 }
 

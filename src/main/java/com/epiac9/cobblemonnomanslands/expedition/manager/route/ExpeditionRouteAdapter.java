@@ -1,15 +1,20 @@
 package com.epiac9.cobblemonnomanslands.expedition.manager.route;
 
 import com.cobblemonexpeditions.data.ExpeditionDefinition;
-import com.epiac9.cobblemonnomanslands.expedition.ExpeditionDungeonMapping;
+import com.epiac9.cobblemonnomanslands.expedition.dimension.ExpeditionDimensionMapping;
+import com.epiac9.cobblemonnomanslands.expedition.dimension.ExpeditionDimensionProfile;
 
 import java.util.UUID;
 
 public class ExpeditionRouteAdapter {
-    private final ExpeditionDungeonMapping mapping;
+    private final ExpeditionDimensionMapping mapping;
 
-    public ExpeditionRouteAdapter(ExpeditionDungeonMapping mapping) {
+    public ExpeditionRouteAdapter(ExpeditionDimensionMapping mapping) {
         this.mapping = mapping;
+    }
+
+    public ExpeditionDimensionMapping getMapping() {
+        return mapping;
     }
 
     public DungeonRouteRequest createRequest(UUID ownerId, ExpeditionDefinition expedition) {
@@ -19,19 +24,16 @@ public class ExpeditionRouteAdapter {
         if (expedition == null) {
             throw new IllegalArgumentException("expedition cannot be null");
         }
-        String dungeonKey = mapping.getDungeonKey(expedition.getId());
-        if (dungeonKey == null) {
-            throw new IllegalArgumentException("No dungeon mapping exists for " + expedition.getId());
+        ExpeditionDimensionProfile profile = mapping.getProfile(expedition.getId());
+        if (profile == null) {
+            throw new IllegalArgumentException("No dimension profile exists for " + expedition.getId());
         }
 
         return new DungeonRouteRequest(
                 ownerId,
-                dungeonKey,
+                profile.dimensionId().toString(),
                 expedition.getTier(),
                 expedition.getDurationSeconds(),
-                DungeonRouteRequest.RouteMode.EXPEDITION_DISPATCH,
-                expedition.getRequiredPower(),
-                expedition.getMinPartySize(),
-                expedition.getMaxPartySize());
+                DungeonRouteRequest.RouteMode.EXPEDITION_DISPATCH);
     }
 }

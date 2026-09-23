@@ -1,0 +1,14 @@
+{
+  "variants": {
+    "active=false": { "model": "cobblemonnomanslands:block/dungeon_portal_inactive" },
+    "active=true,cell=0": { "model": "cobblemonnomanslands:block/dungeon_portal_active_0" },
+    "active=true,cell=1": { "model": "cobblemonnomanslands:block/dungeon_portal_active_1" },
+    "active=true,cell=2": { "model": "cobblemonnomanslands:block/dungeon_portal_active_2" },
+    "active=true,cell=3": { "model": "cobblemonnomanslands:block/dungeon_portal_active_3" },
+    "active=true,cell=4": { "model": "cobblemonnomanslands:block/dungeon_portal_active_4" },
+    "active=true,cell=5": { "model": "cobblemonnomanslands:block/dungeon_portal_active_5" },
+    "active=true,cell=6": { "model": "cobblemonnomanslands:block/dungeon_portal_active_6" },
+    "active=true,cell=7": { "model": "cobblemonnomanslands:block/dungeon_portal_active_7" },
+    "active=true,cell=8": { "model": "cobblemonnomanslands:block/dungeon_portal_active_8" }
+  }
+}

@@ -1,4 +1,4 @@
-package com.epiac9.cobblemonnomanslands.dungeon;
+package com.epiac9.cobblemonnomanslands.dimension;
 
 import com.epiac9.cobblemonnomanslands.CobblemonNoMansLands;
 import net.minecraft.core.registries.Registries;

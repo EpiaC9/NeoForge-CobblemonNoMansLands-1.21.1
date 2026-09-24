@@ -10,6 +10,10 @@ import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 
 public class ExpeditionRouteService {
+    public static int maximumExplorationPokemon(int ownerRank) {
+        return Math.max(1, Math.min(6, 1 + Math.floorDiv(Math.max(0, Math.min(10, ownerRank)) * 5, 10)));
+    }
+
     private final ExpeditionRouteAdapter adapter;
     private final DungeonRouteManager routeManager;
     private final DungeonInstanceManager instanceManager;
@@ -41,8 +45,16 @@ public class ExpeditionRouteService {
         if (profile == null) {
             return DungeonRouteResult.rejected("Exploration is not registered");
         }
-        if (partySize < 1 || partySize > profile.maxMembers()) {
-            return DungeonRouteResult.rejected(profile.dimensionId().toString(), "Invalid exploration party size");
+        if (partySize < 1) {
+            return DungeonRouteResult.rejected(profile.dimensionId().toString(), "Add pokemon to your party!");
+        }
+        if (partySize > profile.maxMembers()) {
+            return DungeonRouteResult.rejected(profile.dimensionId().toString(), "Exploration party size is over the allowed limit");
+        }
+        int maximumPokemon = maximumExplorationPokemon(ownerRank);
+        if (partySize > maximumPokemon) {
+            return DungeonRouteResult.rejected(profile.dimensionId().toString(),
+                "Max " + maximumPokemon + " pokemon!");
         }
         if (currentPower < profile.requiredPowerForRank(ownerRank)) {
             return DungeonRouteResult.rejected(profile.dimensionId().toString(), "Power requirement not met");

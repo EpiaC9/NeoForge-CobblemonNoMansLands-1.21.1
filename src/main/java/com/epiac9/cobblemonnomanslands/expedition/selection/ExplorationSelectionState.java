@@ -10,13 +10,15 @@ import java.util.UUID;
 
 public record ExplorationSelectionState(ResourceKey<Level> dimension, BlockPos boardPosition,
                                         UUID ownerId, ResourceLocation explorationId,
-                                           List<UUID> teammateIds, String instanceId) {
+                                        String instanceId, long startedAt, long expiresAt) {
     public ExplorationSelectionState {
         if (dimension == null || boardPosition == null || ownerId == null || explorationId == null
-                    || teammateIds == null || instanceId == null) {
+                    || instanceId == null) {
             throw new IllegalArgumentException("Exploration selection fields cannot be null");
         }
         boardPosition = boardPosition.immutable();
-        teammateIds = List.copyOf(teammateIds);
+        if (startedAt < 0 || expiresAt < startedAt) {
+            throw new IllegalArgumentException("Invalid exploration session times");
+        }
     }
 }

@@ -3,15 +3,18 @@ package com.epiac9.cobblemonnomanslands.structure.connection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public final class RoomConnectionRegistry {
     private final Map<ResourceKey<Level>, Map<BlockPos, RoomConnection>> connectionsByBoard;
+    private final Map<ResourceKey<Level>, Map<BlockPos, BlockState>> protectedBlocksByPosition;
 
     public RoomConnectionRegistry() {
         this.connectionsByBoard = new HashMap<>();
+        this.protectedBlocksByPosition = new HashMap<>();
     }
 
     public void register(ResourceKey<Level> dimension, RoomConnection connection) {
@@ -44,6 +47,22 @@ public final class RoomConnectionRegistry {
         return connections.get(boardPosition);
     }
 
+    public void registerProtectedBlocks(ResourceKey<Level> dimension, Map<BlockPos, BlockState> protectedBlocks) {
+        if (dimension == null || protectedBlocks == null) {
+            return;
+        }
+        protectedBlocksByPosition.put(dimension, new HashMap<>(protectedBlocks));
+    }
+
+    public boolean isProtectedBlock(ResourceKey<Level> dimension, BlockPos position, BlockState currentState) {
+        Map<BlockPos, BlockState> protectedBlocks = protectedBlocksByPosition.get(dimension);
+        if (protectedBlocks == null || position == null || currentState == null) {
+            return false;
+        }
+        BlockState expectedState = protectedBlocks.get(position);
+        return expectedState != null && expectedState.equals(currentState);
+    }
+
     public boolean unregister(ResourceKey<Level> dimension, RoomConnection connection) {
         if (dimension == null || connection == null) {
             return false;
@@ -70,5 +89,6 @@ public final class RoomConnectionRegistry {
 
     public void clear() {
         connectionsByBoard.clear();
+        protectedBlocksByPosition.clear();
     }
 }

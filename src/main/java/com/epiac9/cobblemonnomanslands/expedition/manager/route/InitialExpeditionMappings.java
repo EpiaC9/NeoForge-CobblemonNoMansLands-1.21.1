@@ -35,7 +35,8 @@ public class InitialExpeditionMappings {
                 20L * 60L * 5L,
                 Set.of(resourceCategories),
                 rankRequirements(rankZeroPower),
-                3));
+                3,
+                durationRequirements(expeditionId)));
         }
 
         private static Map<Integer, Integer> rankRequirements(int rankZeroPower) {
@@ -60,5 +61,33 @@ public class InitialExpeditionMappings {
                 case 9 -> 3.72D;
                 default -> 4.0D;
             };
+        }
+
+        private static Map<Integer, Integer> durationRequirements(String expeditionId) {
+            int minimum = switch (expeditionId) {
+                case "forest_forage" -> 12;
+                case "shoreline_survey" -> 14;
+                case "berry_grove_harvest" -> 18;
+                case "cave_delve" -> 20;
+                case "deep_sea_dive" -> 28;
+                case "volcanic_survey" -> 30;
+                case "frozen_ruins" -> 36;
+                default -> 40;
+            };
+            int maximum = switch (expeditionId) {
+                case "forest_forage" -> 28;
+                case "shoreline_survey" -> 32;
+                case "berry_grove_harvest" -> 36;
+                case "cave_delve" -> 40;
+                case "deep_sea_dive" -> 46;
+                case "volcanic_survey" -> 48;
+                case "frozen_ruins" -> 52;
+                default -> 56;
+            };
+            Map<Integer, Integer> durations = new LinkedHashMap<>();
+            for (int rank = 0; rank <= 10; rank++) {
+                durations.put(rank, (int) Math.round(minimum + (maximum - minimum) * rank / 10.0D));
+            }
+            return durations;
         }
 }

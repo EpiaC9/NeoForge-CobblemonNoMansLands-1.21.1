@@ -23,7 +23,9 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class WorldSpawnStructureService {
     private static final String PLACEMENT_STATE_ID = "cobblemonnomanslands_world_spawn_structure";
@@ -46,6 +48,7 @@ public final class WorldSpawnStructureService {
             RoomConnection restoredConnection = placementState.restoreConnection(level);
             if (restoredConnection != null) {
                 CONNECTIONS.register(level.dimension(), restoredConnection);
+                CONNECTIONS.registerProtectedBlocks(level.dimension(), placementState.protectedBlocks());
             }
             return;
         }
@@ -56,6 +59,7 @@ public final class WorldSpawnStructureService {
             if (legacyConnection != null) {
                 CONNECTIONS.register(level.dimension(), legacyConnection);
                 placementState.recordConnection(legacyConnection);
+                CONNECTIONS.registerProtectedBlocks(level.dimension(), placementState.protectedBlocks());
             }
             placementState.markPlaced();
             return;
@@ -83,6 +87,9 @@ public final class WorldSpawnStructureService {
         RoomConnection connection = resolveMarkers(level, structurePos, new BlockPos(template.getSize()));
         if (connection != null) {
             CONNECTIONS.register(level.dimension(), connection);
+            Map<BlockPos, BlockState> protectedBlocks = captureProtectedBlocks(level, template, structurePos, settings);
+            placementState.recordProtectedBlocks(protectedBlocks);
+            CONNECTIONS.registerProtectedBlocks(level.dimension(), protectedBlocks);
             placementState.recordConnection(connection);
             placementState.markPlaced();
         }
@@ -98,6 +105,23 @@ public final class WorldSpawnStructureService {
 
     public static RoomConnectionRegistry getConnectionRegistry() {
         return CONNECTIONS;
+    }
+
+    private static Map<BlockPos, BlockState> captureProtectedBlocks(ServerLevel level,
+                                                                     StructureTemplate template,
+                                                                     BlockPos origin,
+                                                                     StructurePlaceSettings settings) {
+        Map<BlockPos, BlockState> protectedBlocks = new HashMap<>();
+        for (Block block : BuiltInRegistries.BLOCK) {
+            for (StructureTemplate.StructureBlockInfo blockInfo : template.filterBlocks(origin, settings, block)) {
+                BlockPos position = blockInfo.pos();
+                BlockState state = level.getBlockState(position);
+                if (!state.isAir()) {
+                    protectedBlocks.put(position.immutable(), state);
+                }
+            }
+        }
+        return protectedBlocks;
     }
 
     public static RoomConnection resolveMarkers(ServerLevel level, BlockPos origin, BlockPos size) {

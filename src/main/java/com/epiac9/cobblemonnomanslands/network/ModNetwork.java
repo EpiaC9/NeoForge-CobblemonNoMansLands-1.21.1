@@ -14,10 +14,25 @@ public final class ModNetwork {
                 ExplorationSelectionPayload.STREAM_CODEC,
                 ExplorationSelectionPayload::handle
         );
+        registrar.playToServer(
+            ExplorationCancelPayload.TYPE,
+            ExplorationCancelPayload.STREAM_CODEC,
+            ExplorationCancelPayload::handle
+        );
+        registrar.playToServer(
+            ExplorationPartyStatusRequestPayload.TYPE,
+            ExplorationPartyStatusRequestPayload.STREAM_CODEC,
+            ExplorationPartyStatusRequestPayload::handle
+        );
         registrar.playToClient(
             ExplorationSelectionResultPayload.TYPE,
             ExplorationSelectionResultPayload.STREAM_CODEC,
             ExplorationSelectionResultPayload::handle
+        );
+        registrar.playToClient(
+            ExplorationPartyStatusPayload.TYPE,
+            ExplorationPartyStatusPayload.STREAM_CODEC,
+            ExplorationPartyStatusPayload::handle
         );
     }
 }

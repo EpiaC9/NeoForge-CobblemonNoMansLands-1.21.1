@@ -11,15 +11,15 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record ExplorationSelectionResultPayload(BlockPos boardPosition, ResourceLocation explorationId,
                                                 boolean accepted, String reason, int currentPower,
-                                                int requiredPower, int currentMembers, int maxMembers,
-                                                java.util.List<PlayerStats> playerStats)
-        implements CustomPacketPayload {
+                                                int requiredPower, int currentPokemon, int maximumPokemon,
+                                                int durationMinutes,
+                                                long startedAt, long expiresAt) implements CustomPacketPayload {
     public static final Type<ExplorationSelectionResultPayload> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(CobblemonNoMansLands.MODID, "exploration_selection_result")
+        ResourceLocation.fromNamespaceAndPath(CobblemonNoMansLands.MODID, "exploration_selection_result")
     );
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ExplorationSelectionResultPayload> STREAM_CODEC =
-            StreamCodec.of(ExplorationSelectionResultPayload::write, ExplorationSelectionResultPayload::read);
+        StreamCodec.of(ExplorationSelectionResultPayload::write, ExplorationSelectionResultPayload::read);
 
     private static void write(RegistryFriendlyByteBuf buffer, ExplorationSelectionResultPayload payload) {
         BlockPos.STREAM_CODEC.encode(buffer, payload.boardPosition());
@@ -28,34 +28,26 @@ public record ExplorationSelectionResultPayload(BlockPos boardPosition, Resource
         buffer.writeUtf(payload.reason(), 256);
         buffer.writeVarInt(payload.currentPower());
         buffer.writeVarInt(payload.requiredPower());
-        buffer.writeVarInt(payload.currentMembers());
-        buffer.writeVarInt(payload.maxMembers());
-        buffer.writeVarInt(payload.playerStats().size());
-        for (PlayerStats stats : payload.playerStats()) {
-            net.minecraft.core.UUIDUtil.STREAM_CODEC.encode(buffer, stats.playerId());
-            buffer.writeVarInt(stats.rank());
-            buffer.writeVarInt(stats.power());
-        }
+        buffer.writeVarInt(payload.currentPokemon());
+        buffer.writeVarInt(payload.maximumPokemon());
+        buffer.writeVarInt(payload.durationMinutes());
+        buffer.writeLong(payload.startedAt());
+        buffer.writeLong(payload.expiresAt());
     }
 
     private static ExplorationSelectionResultPayload read(RegistryFriendlyByteBuf buffer) {
-        BlockPos boardPosition = BlockPos.STREAM_CODEC.decode(buffer);
-        ResourceLocation explorationId = ResourceLocation.STREAM_CODEC.decode(buffer);
-        boolean accepted = buffer.readBoolean();
-        String reason = buffer.readUtf(256);
-        int currentPower = buffer.readVarInt();
-        int requiredPower = buffer.readVarInt();
-        int currentMembers = buffer.readVarInt();
-        int maxMembers = buffer.readVarInt();
-        int count = buffer.readVarInt();
-        java.util.List<PlayerStats> playerStats = new java.util.ArrayList<>(count);
-        for (int index = 0; index < count; index++) {
-            playerStats.add(new PlayerStats(net.minecraft.core.UUIDUtil.STREAM_CODEC.decode(buffer),
-                buffer.readVarInt(), buffer.readVarInt()));
-        }
         return new ExplorationSelectionResultPayload(
-            boardPosition, explorationId, accepted, reason,
-            currentPower, requiredPower, currentMembers, maxMembers, playerStats
+            BlockPos.STREAM_CODEC.decode(buffer),
+            ResourceLocation.STREAM_CODEC.decode(buffer),
+            buffer.readBoolean(),
+            buffer.readUtf(256),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readVarInt(),
+            buffer.readLong(),
+            buffer.readLong()
         );
     }
 
@@ -66,8 +58,5 @@ public record ExplorationSelectionResultPayload(BlockPos boardPosition, Resource
     @Override
     public Type<ExplorationSelectionResultPayload> type() {
         return TYPE;
-    }
-
-    public record PlayerStats(java.util.UUID playerId, int rank, int power) {
     }
 }

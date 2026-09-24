@@ -1,7 +1,7 @@
 package com.epiac9.cobblemonnomanslands.portal.runtime;
 
 import com.epiac9.cobblemonnomanslands.CobblemonNoMansLands;
-import com.epiac9.cobblemonnomanslands.dungeon.DungeonDimensionKeys;
+import com.epiac9.cobblemonnomanslands.dimension.DungeonDimensionKeys;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;

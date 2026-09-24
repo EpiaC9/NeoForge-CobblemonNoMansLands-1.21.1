@@ -6,7 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 public final class ExplorationPlayerStatsService {
     public ExplorationPlayerStats get(ServerPlayer player) {
         if (player == null) {
-            return new ExplorationPlayerStats(0, 0);
+            return new ExplorationPlayerStats(0, 0, 0);
         }
 
         try {
@@ -15,9 +15,11 @@ public final class ExplorationPlayerStatsService {
             Object storage = cobblemonClass.getMethod("getStorage").invoke(cobblemon);
             Object party = storage.getClass().getMethod("getParty", ServerPlayer.class).invoke(storage, player);
             int power = 0;
+            int partyCount = 0;
             if (party instanceof Iterable<?> members) {
                 for (Object pokemon : members) {
                     if (pokemon != null) {
+                        partyCount++;
                         power += pokemonPower(pokemon);
                     }
                 }
@@ -30,9 +32,9 @@ public final class ExplorationPlayerStatsService {
                     .invoke(manager, player.getUUID());
             int rank = expeditionData == null ? 0
                     : (int) expeditionData.getClass().getMethod("getExpeditionRank").invoke(expeditionData);
-            return new ExplorationPlayerStats(rank, power);
+            return new ExplorationPlayerStats(rank, power, partyCount);
         } catch (ReflectiveOperationException | RuntimeException exception) {
-            return new ExplorationPlayerStats(0, 0);
+            return new ExplorationPlayerStats(0, 0, 0);
         }
     }
 
@@ -43,7 +45,8 @@ public final class ExplorationPlayerStatsService {
         int ivTotal = ivs == null ? 0 : (int) ivs.getClass().getMethod("getEffectiveBattleTotal").invoke(ivs);
         int evTotal = evs == null ? 0 : (int) evs.getClass().getMethod("total").invoke(evs);
         double ivAverage = ivTotal / 6.0D;
-        double normalizedContribution = 1.0D + ivAverage / 31.0D + evTotal / 510.0D;
-        return (int) Math.round(level * normalizedContribution);
+        int ivContribution = (int) Math.round(level * ivAverage / 300.0D);
+        int evContribution = (int) Math.round(evTotal * 10.0D / 510.0D);
+        return level + ivContribution + evContribution;
     }
 }

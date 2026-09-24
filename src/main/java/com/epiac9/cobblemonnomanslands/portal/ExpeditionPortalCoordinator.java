@@ -12,9 +12,14 @@ import com.epiac9.cobblemonnomanslands.structure.connection.RoomConnectionRegist
 import com.epiac9.cobblemonnomanslands.expedition.selection.ExplorationSelectionState;
 import com.epiac9.cobblemonnomanslands.expedition.dimension.ExpeditionDimensionProfile;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.portal.DimensionTransition;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.state.BlockState;
 
 import static com.epiac9.cobblemonnomanslands.expedition.manager.route.DungeonRouteResult.rejected;
@@ -92,8 +97,23 @@ public class ExpeditionPortalCoordinator {
             return result;
         }
 
+        ResourceKey<Level> targetKey = ResourceKey.create(
+            Registries.DIMENSION, ResourceLocation.parse(result.dimensionKey()));
+        ServerLevel targetLevel = player.server.getLevel(targetKey);
+        if (targetLevel == null) {
+            return rejected(result.dimensionKey(), "Target expedition dimension is unavailable");
+        }
+
         anchor.setInstanceId(result.pendingInstanceId());
         portalService.activatePortal(player.serverLevel(), anchor, activePortalState);
+        player.changeDimension(new DimensionTransition(
+            targetLevel,
+            targetLevel.getSharedSpawnPos().getCenter(),
+            Vec3.ZERO,
+            targetLevel.getSharedSpawnAngle(),
+            0.0F,
+            DimensionTransition.DO_NOTHING
+        ));
         return result;
     }
 

@@ -24,7 +24,7 @@ public record ExplorationCancelPayload(BlockPos boardPosition) implements Custom
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer owner) {
-                PortalRuntimeEvents.getRuntime().getExplorationSelectionService()
+                PortalRuntimeEvents.getRuntime().getBoardService()
                     .cancel(owner, boardPosition);
             }
         });

@@ -2,6 +2,7 @@ package com.epiac9.cobblemonnomanslands.structure.connection;
 
 import com.epiac9.cobblemonnomanslands.marker.room.RoomMarkerBlock;
 import com.epiac9.cobblemonnomanslands.portal.anchor.PortalAnchorState;
+import com.epiac9.cobblemonnomanslands.portal.anchor.PortalGeometry;
 import net.minecraft.core.BlockPos;
 
 import java.util.List;
@@ -62,5 +63,16 @@ public record RoomConnection(RoomMarkerBlock.RoomData roomData, List<PortalAncho
 
     public boolean containsPortal(BlockPos position) {
         return portalPositions().contains(position);
+    }
+
+    public PortalAnchorState findPortalContaining(BlockPos position) {
+        if (position == null) {
+            return null;
+        }
+        return portals.stream()
+            .filter(portal -> PortalGeometry.getInteriorPositions(portal).stream()
+                .anyMatch(cell -> cell.position().equals(position)))
+            .findFirst()
+            .orElse(null);
     }
 }

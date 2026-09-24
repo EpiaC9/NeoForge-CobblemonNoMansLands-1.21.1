@@ -7,6 +7,7 @@ import com.epiac9.cobblemonnomanslands.marker.base.PortalMarkerBlock;
 import com.epiac9.cobblemonnomanslands.marker.room.RoomMarkerBlock;
 import com.epiac9.cobblemonnomanslands.marker.room.StarterStructureMarker;
 import com.epiac9.cobblemonnomanslands.portal.anchor.PortalAnchorState;
+import com.epiac9.cobblemonnomanslands.portal.anchor.PortalService;
 import com.epiac9.cobblemonnomanslands.structure.connection.RoomConnection;
 import com.epiac9.cobblemonnomanslands.structure.connection.RoomConnectionRegistry;
 import net.minecraft.core.BlockPos;
@@ -262,6 +263,8 @@ public final class WorldSpawnStructureService {
         List<PortalAnchorState> portals = portalPositions.stream()
                 .map(PortalAnchorState::new)
                 .toList();
+        PortalService portalService = new PortalService();
+        portals.forEach(portal -> portalService.recoverInactivePortal(level, portal));
         return new RoomConnection(roomData, portals);
     }
 }

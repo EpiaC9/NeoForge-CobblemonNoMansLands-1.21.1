@@ -9,10 +9,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.network.PacketDistributor;
-import java.util.List;
 
 public record ExplorationSelectionPayload(BlockPos boardPosition, ResourceLocation explorationId)
     implements CustomPacketPayload {
@@ -40,23 +37,15 @@ public record ExplorationSelectionPayload(BlockPos boardPosition, ResourceLocati
                 return;
             }
 
-            BlockState activePortalState = com.epiac9.cobblemonnomanslands.registry.ModBlocks.DUNGEON_PORTAL
-                    .get().defaultBlockState();
-                ExplorationSelectionService.SelectionResult result = PortalRuntimeEvents.getRuntime()
-                    .getExplorationSelectionService().select(
-                    player,
-                    explorationId,
-                    boardPosition,
-                    activePortalState
-            );
-                PacketDistributor.sendToPlayer(player, buildResult(boardPosition, explorationId, result));
+            PortalRuntimeEvents.getRuntime().getBoardService().select(player, boardPosition, explorationId);
         });
     }
 
-    public static ExplorationSelectionResultPayload buildResult(BlockPos boardPosition,
+    public static ExplorationSelectionResultPayload buildResult(ResourceLocation dimensionId, BlockPos boardPosition,
                                                                  ResourceLocation explorationId,
                                                                  ExplorationSelectionService.SelectionResult result) {
         return new ExplorationSelectionResultPayload(
+                    dimensionId,
                     boardPosition,
                     explorationId,
                     result.accepted(),

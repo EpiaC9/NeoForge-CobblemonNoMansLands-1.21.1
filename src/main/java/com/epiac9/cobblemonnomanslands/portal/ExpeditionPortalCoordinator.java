@@ -12,15 +12,17 @@ import com.epiac9.cobblemonnomanslands.structure.connection.RoomConnectionRegist
 import com.epiac9.cobblemonnomanslands.expedition.selection.ExplorationSelectionState;
 import com.epiac9.cobblemonnomanslands.expedition.dimension.ExpeditionDimensionProfile;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.portal.DimensionTransition;
+import net.minecraft.world.phys.Vec3;
 
 import static com.epiac9.cobblemonnomanslands.expedition.manager.route.DungeonRouteResult.rejected;
 
@@ -97,45 +99,99 @@ public class ExpeditionPortalCoordinator {
             return result;
         }
 
-        ResourceKey<Level> targetKey = ResourceKey.create(
-            Registries.DIMENSION, ResourceLocation.parse(result.dimensionKey()));
-        ServerLevel targetLevel = player.server.getLevel(targetKey);
-        if (targetLevel == null) {
-            return rejected(result.dimensionKey(), "Target expedition dimension is unavailable");
-        }
-
         anchor.setInstanceId(result.pendingInstanceId());
         portalService.activatePortal(player.serverLevel(), anchor, activePortalState);
-        player.changeDimension(new DimensionTransition(
-            targetLevel,
-            targetLevel.getSharedSpawnPos().getCenter(),
-            Vec3.ZERO,
-            targetLevel.getSharedSpawnAngle(),
-            0.0F,
-            DimensionTransition.DO_NOTHING
-        ));
         return result;
     }
 
-    public boolean deactivateExploration(ServerPlayer owner, ExplorationSelectionState selection) {
-        if (owner == null || selection == null) {
+    public boolean deactivateExploration(MinecraftServer server, ExplorationSelectionState selection) {
+        if (server == null || selection == null) {
             return false;
         }
         RoomConnection roomConnection = connectionRegistry.findByBoard(
                 selection.dimension(), selection.boardPosition());
         if (roomConnection == null) {
-            return false;
+            routeService.getInstanceManager().removeInstance(selection.instanceId());
+            return true;
         }
         PortalAnchorState anchor = roomConnection.findPortalByInstanceId(selection.instanceId());
         if (anchor == null) {
+            routeService.getInstanceManager().removeInstance(selection.instanceId());
+            return true;
+        }
+        ServerLevel sourceLevel = server.getLevel(selection.dimension());
+        if (sourceLevel == null) {
             return false;
         }
         portalService.deactivatePortal(
-                owner.serverLevel(),
+                sourceLevel,
                 anchor,
                 com.epiac9.cobblemonnomanslands.registry.ModBlocks.DUNGEON_PORTAL.get().defaultBlockState());
         anchor.setInstanceId(null);
+        routeService.getInstanceManager().removeInstance(selection.instanceId());
         return true;
+    }
+
+    public boolean enterPortal(ServerPlayer player, ServerLevel sourceLevel, BlockPos portalPosition) {
+        if (player == null || sourceLevel == null || portalPosition == null) {
+            return false;
+        }
+        if (player.serverLevel() != sourceLevel) {
+            return false;
+        }
+        PortalAnchorState anchor = connectionRegistry.findPortalContaining(
+            sourceLevel.dimension(), portalPosition);
+        if (anchor == null || !anchor.isActive() || anchor.getInstanceId() == null) {
+            return false;
+        }
+        var instance = routeService.getInstanceManager().getInstance(anchor.getInstanceId());
+        if (instance == null || !player.getUUID().equals(instance.getOwnerId())) {
+            return false;
+        }
+        ResourceKey<Level> targetKey = ResourceKey.create(
+            Registries.DIMENSION, ResourceLocation.parse(instance.getDimensionKey()));
+        ServerLevel targetLevel = player.server.getLevel(targetKey);
+        if (targetLevel == null) {
+            return false;
+        }
+        if (player.isOnPortalCooldown()) {
+            return false;
+        }
+        // Failed terrain searches must not repeat every collision tick.
+        player.setPortalCooldown();
+        Vec3 arrival = PortalArrivalResolver.find(targetLevel, player);
+        if (arrival == null) {
+            player.displayClientMessage(Component.literal("No safe arrival spot was found near the destination spawn. Try again shortly."), true);
+            return false;
+        }
+        var transferred = player.changeDimension(new DimensionTransition(
+            targetLevel,
+            arrival,
+            Vec3.ZERO,
+            targetLevel.getSharedSpawnAngle(),
+            0.0F,
+            DimensionTransition.DO_NOTHING
+        ));
+        if (transferred == null || player.serverLevel() != targetLevel) {
+            return false;
+        }
+        player.resetFallDistance();
+        player.setDeltaMovement(Vec3.ZERO);
+        portalService.deactivatePortal(
+            sourceLevel,
+            anchor,
+            com.epiac9.cobblemonnomanslands.registry.ModBlocks.DUNGEON_PORTAL.get().defaultBlockState());
+        anchor.setInstanceId(null);
+        routeService.getInstanceManager().removeInstance(instance.getInstanceId());
+        return true;
+    }
+
+    public boolean hasAvailablePortal(ServerLevel level, BlockPos boardPosition) {
+        if (level == null || boardPosition == null) {
+            return false;
+        }
+        RoomConnection roomConnection = connectionRegistry.findByBoard(level.dimension(), boardPosition);
+        return roomConnection != null && roomConnection.findAvailablePortal() != null;
     }
 
     public ExpeditionDimensionProfile getExplorationProfile(ResourceLocation explorationId) {

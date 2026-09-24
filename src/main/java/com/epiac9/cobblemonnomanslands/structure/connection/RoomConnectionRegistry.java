@@ -1,5 +1,6 @@
 package com.epiac9.cobblemonnomanslands.structure.connection;
 
+import com.epiac9.cobblemonnomanslands.portal.anchor.PortalAnchorState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -61,6 +62,19 @@ public final class RoomConnectionRegistry {
         }
         BlockState expectedState = protectedBlocks.get(position);
         return expectedState != null && expectedState.equals(currentState);
+    }
+
+    public PortalAnchorState findPortalContaining(ResourceKey<Level> dimension, BlockPos position) {
+        Map<BlockPos, RoomConnection> connections = connectionsByBoard.get(dimension);
+        if (connections == null || position == null) {
+            return null;
+        }
+        return connections.values().stream()
+            .distinct()
+            .map(connection -> connection.findPortalContaining(position))
+            .filter(java.util.Objects::nonNull)
+            .findFirst()
+            .orElse(null);
     }
 
     public boolean unregister(ResourceKey<Level> dimension, RoomConnection connection) {

@@ -1,8 +1,6 @@
 package com.epiac9.cobblemonnomanslands.portal.runtime;
 
 import com.epiac9.cobblemonnomanslands.CobblemonNoMansLands;
-import com.epiac9.cobblemonnomanslands.dimension.DungeonDimensionKeys;
-import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -25,7 +23,7 @@ public final class PortalRuntimeEvents {
     @SubscribeEvent
     public static void onServerStopped(ServerStoppingEvent event) {
         if (runtime != null) {
-            runtime.getExplorationSelectionService().clearAll();
+            runtime.getExplorationSelectionService().clearAll(event.getServer());
         }
         runtime = null;
     } //event handler
@@ -34,6 +32,7 @@ public final class PortalRuntimeEvents {
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         if (runtime != null && event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
             runtime.getExplorationSelectionService().cancelOwnedBy(player);
+            runtime.getBoardService().forgetPlayer(player.getUUID());
         }
     }
 
@@ -50,11 +49,6 @@ public final class PortalRuntimeEvents {
             return;
         }
 
-        ServerLevel dungeonLevel = event.getServer().getLevel(DungeonDimensionKeys.DUNGEON);
-        if (dungeonLevel == null) {
-            return;
-        }
-
-        runtime.tick(dungeonLevel);
+        runtime.tick(event.getServer());
     }
 }

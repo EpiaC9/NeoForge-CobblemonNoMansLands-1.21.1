@@ -9,7 +9,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public record ExplorationSelectionResultPayload(BlockPos boardPosition, ResourceLocation explorationId,
+public record ExplorationSelectionResultPayload(ResourceLocation dimensionId, BlockPos boardPosition, ResourceLocation explorationId,
                                                 boolean accepted, String reason, int currentPower,
                                                 int requiredPower, int currentPokemon, int maximumPokemon,
                                                 int durationMinutes,
@@ -22,6 +22,7 @@ public record ExplorationSelectionResultPayload(BlockPos boardPosition, Resource
         StreamCodec.of(ExplorationSelectionResultPayload::write, ExplorationSelectionResultPayload::read);
 
     private static void write(RegistryFriendlyByteBuf buffer, ExplorationSelectionResultPayload payload) {
+        ResourceLocation.STREAM_CODEC.encode(buffer, payload.dimensionId());
         BlockPos.STREAM_CODEC.encode(buffer, payload.boardPosition());
         ResourceLocation.STREAM_CODEC.encode(buffer, payload.explorationId());
         buffer.writeBoolean(payload.accepted());
@@ -37,6 +38,7 @@ public record ExplorationSelectionResultPayload(BlockPos boardPosition, Resource
 
     private static ExplorationSelectionResultPayload read(RegistryFriendlyByteBuf buffer) {
         return new ExplorationSelectionResultPayload(
+            ResourceLocation.STREAM_CODEC.decode(buffer),
             BlockPos.STREAM_CODEC.decode(buffer),
             ResourceLocation.STREAM_CODEC.decode(buffer),
             buffer.readBoolean(),

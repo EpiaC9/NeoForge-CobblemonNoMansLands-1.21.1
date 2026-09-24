@@ -12,49 +12,49 @@ Main mod for Cobblemon No Man's Land modpack. Recreating Vault Hunters gameplay 
 [[mixins]]
 config="mixins.cobblemonnomanslands.json"
 
-[[dependencies.cobblemonnml]]
+[[dependencies.${mod_id}]]
     modId="cobblemon"
     type="required"
     versionRange="[1.8.1,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.cobblemonnml]]
+[[dependencies.${mod_id}]]
     modId="cobblemontrialsedition"
     type="required"
     versionRange="[2.2,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.cobblemonnml]]
+[[dependencies.${mod_id}]]
     modId="cobblemon_expeditions"
     type="required"
     versionRange="[1.8.0,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.cobblemonnml]]
+[[dependencies.${mod_id}]]
     modId="easy_npc"
     type="required"
     versionRange="[7.12.1,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.cobblemonnml]]
+[[dependencies.${mod_id}]]
     modId="easy_npc_config_ui"
     type="required"
     versionRange="[7.12.1,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.cobblemonnml]]
+[[dependencies.${mod_id}]]
     modId="architectury"
     type="required"
     versionRange="[13.0.11,)"
     ordering="AFTER"
     side="BOTH"
 
-[[dependencies.cobblemonnml]]
+[[dependencies.${mod_id}]]
     modId="fightorflight"
     type="required"
     versionRange="[0.11.0,)"

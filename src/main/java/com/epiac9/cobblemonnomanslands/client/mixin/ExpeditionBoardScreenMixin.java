@@ -1,6 +1,8 @@
 package com.epiac9.cobblemonnomanslands.client.mixin;
 
 import com.epiac9.cobblemonnomanslands.client.ExplorationSelectionClientState;
+import com.epiac9.cobblemonnomanslands.expedition.dimension.ExpeditionDimensionMapping;
+import com.epiac9.cobblemonnomanslands.expedition.manager.route.InitialExpeditionMappings;
 import com.epiac9.cobblemonnomanslands.client.ExplorationTabState;
 import com.epiac9.cobblemonnomanslands.client.ExplorationPartyClientState;
 import com.cobblemonexpeditions.gui.Rect;
@@ -17,6 +19,7 @@ import com.epiac9.cobblemonnomanslands.network.ExplorationSelectionPayload;
 import com.epiac9.cobblemonnomanslands.network.ExplorationSelectionResultPayload;
 import com.epiac9.cobblemonnomanslands.network.ExplorationCancelPayload;
 import com.epiac9.cobblemonnomanslands.network.ExplorationPartyStatusRequestPayload;
+import com.epiac9.cobblemonnomanslands.network.ExplorationPartyStatusPayload;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -38,6 +41,7 @@ import java.util.List;
 
 @Mixin(targets = "com.cobblemonexpeditions.gui.ExpeditionBoardScreen")
 public abstract class ExpeditionBoardScreenMixin extends Screen {
+    private static final ExpeditionDimensionMapping EXPLORATION_PROFILES = InitialExpeditionMappings.create();
     private static final int TAB_HEIGHT = 18;
     private static final int EXPLORATION_POWER_COLUMN_OFFSET = 120;
 
@@ -76,12 +80,17 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
     private ResourceLocation activeExplorationId;
     private ExplorationSelectionResultPayload synchronizedResult;
     private int routedCurrentPower;
-    private int routedRequiredPower;
-    private int routedDurationMinutes = 12;
-    private long routedStartedAt;
-    private long routedExpiresAt;
     private int currentPokemon;
     private int maximumPokemon = 1;
+    private boolean portalAvailable;
+    private boolean boardAccessible;
+    private boolean statsAvailable;
+    private boolean ownerHasPending;
+    private boolean boardActionPending;
+    private int currentRank;
+    private int statusPollTicks;
+    private ResourceLocation boardDimensionId;
+    private ExplorationPartyStatusPayload synchronizedStatus;
     protected ExpeditionBoardScreenMixin(Component title) {
         super(title);
     }
@@ -89,8 +98,50 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
     @Inject(method = "init", at = @At("TAIL"))
     private void cobblemonNoMansLands$initExploration(CallbackInfo callbackInfo) {
         explorationMode = ExplorationTabState.isExplorationMode();
-        if (blockPos != null) {
+        if (blockPos != null && Minecraft.getInstance().level != null) {
+            boardDimensionId = Minecraft.getInstance().level.dimension().location();
+            ExplorationPartyClientState.begin(boardDimensionId, blockPos);
+            ExplorationSelectionClientState.begin(boardDimensionId, blockPos);
+            synchronizedStatus = null;
+            synchronizedResult = null;
+            explorationConfirmed = false;
+            activeExplorationId = null;
+            boardAccessible = false;
+            statsAvailable = false;
+            portalAvailable = false;
+            ownerHasPending = false;
+            boardActionPending = false;
+            statusPollTicks = 0;
+            requestExplorationStatus();
+        }
+    }
+
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void cobblemonNoMansLands$refreshExplorationStatus(CallbackInfo callbackInfo) {
+        if (explorationMode && ++statusPollTicks >= 20) {
+            statusPollTicks = 0;
+            requestExplorationStatus();
+        }
+    }
+
+    @Inject(method = "onClose", at = @At("TAIL"))
+    private void cobblemonNoMansLands$clearExplorationView(CallbackInfo callbackInfo) {
+        ExplorationPartyClientState.clear();
+        ExplorationSelectionClientState.clear();
+    }
+
+    private void requestExplorationStatus() {
+        if (blockPos != null && Minecraft.getInstance().level != null
+                && Minecraft.getInstance().level.dimension().location().equals(boardDimensionId)) {
             PacketDistributor.sendToServer(new ExplorationPartyStatusRequestPayload(blockPos));
+        }
+    }
+
+    @Inject(method = "render", at = @At("HEAD"))
+    private void cobblemonNoMansLands$syncBeforeRender(GuiGraphics graphics, int mouseX, int mouseY,
+                                                      float partialTick, CallbackInfo callbackInfo) {
+        if (explorationMode) {
+            syncExplorationResult();
         }
     }
 
@@ -180,8 +231,8 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
         if (!explorationMode) {
             return expedition.getRequiredPower();
         }
-        int rank = syncedState == null ? 0 : syncedState.getExpeditionRank();
-        return rankRequirement(expedition.getExpeditionId(), rank);
+        var profile = EXPLORATION_PROFILES.getProfile(expedition.getExpeditionId());
+        return profile == null ? expedition.getRequiredPower() : profile.requiredPowerForRank(currentRank);
     }
 
     @Redirect(method = "drawExpeditionTooltip", at = @At(value = "INVOKE",
@@ -191,8 +242,8 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
         if (!explorationMode) {
             return expedition.getRequiredPower();
         }
-        int rank = syncedState == null ? 0 : syncedState.getExpeditionRank();
-        return rankRequirement(expedition.getExpeditionId(), rank);
+        var profile = EXPLORATION_PROFILES.getProfile(expedition.getExpeditionId());
+        return profile == null ? expedition.getRequiredPower() : profile.requiredPowerForRank(currentRank);
     }
 
     @Redirect(method = "drawAvailableExpeditions", at = @At(value = "INVOKE",
@@ -203,8 +254,9 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
         if (!explorationMode) {
             return math.effectiveDurationSeconds(state, expedition);
         }
-        int rank = syncedState == null ? 0 : syncedState.getExpeditionRank();
-        return explorationDurationMinutes(expedition.getExpeditionId(), rank) * 60;
+        var profile = EXPLORATION_PROFILES.getProfile(expedition.getExpeditionId());
+        return profile == null ? math.effectiveDurationSeconds(state, expedition)
+            : profile.durationMinutesForRank(currentRank) * 60;
     }
 
     @Redirect(method = "drawExpeditionTooltip", at = @At(value = "INVOKE",
@@ -215,8 +267,9 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
         if (!explorationMode) {
             return math.effectiveDurationSeconds(state, expedition);
         }
-        int rank = syncedState == null ? 0 : syncedState.getExpeditionRank();
-        return explorationDurationMinutes(expedition.getExpeditionId(), rank) * 60;
+        var profile = EXPLORATION_PROFILES.getProfile(expedition.getExpeditionId());
+        return profile == null ? math.effectiveDurationSeconds(state, expedition)
+            : profile.durationMinutesForRank(currentRank) * 60;
     }
 
     @Inject(method = "drawSelectionBar", at = @At("HEAD"), cancellable = true)
@@ -228,29 +281,28 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
         }
         callbackInfo.cancel();
         syncExplorationResult();
-        var partyStatus = ExplorationPartyClientState.peek(blockPos);
-        if (partyStatus != null) {
-            currentPokemon = partyStatus.currentPokemon();
-            maximumPokemon = partyStatus.maximumPokemon();
-            routedCurrentPower = partyStatus.currentPower();
-        }
         List<SyncStatePayload.AvailableExpeditionInfo> expeditions = getAvailableExpeditions();
-        int requiredPower = routedRequiredPower;
+        int requiredPower = 0;
+        boolean registeredExploration = false;
         if (selectedExpeditionIndex >= 0 && selectedExpeditionIndex < expeditions.size()) {
-            requiredPower = routedRequiredPower > 0 ? routedRequiredPower
-                : rankRequirement(expeditions.get(selectedExpeditionIndex).getExpeditionId());
+            ResourceLocation selectedId = expeditions.get(selectedExpeditionIndex).getExpeditionId();
+            registeredExploration = EXPLORATION_PROFILES.contains(selectedId);
+            requiredPower = rankRequirement(selectedId);
         }
         int currentPower = routedCurrentPower;
         int textX = rect.getX() + 4;
         int textY = rect.getY() + 5;
         if (explorationSelected) {
-            String teamText = "Team: " + currentPokemon + "/" + maximumPokemon;
+            String teamText = !registeredExploration ? "Exploration unavailable"
+                : statsAvailable ? "Team: " + currentPokemon + "/" + maximumPokemon : "Party stats unavailable";
             String powerText = "Pwr: " + currentPower + "/" + requiredPower;
             int powerColor = currentPower >= requiredPower ? 0xFF55FF55 : 0xFFFF5555;
-            int teamColor = currentPokemon == 0 || currentPokemon > maximumPokemon ? 0xFFFF5555 : theme.getTextOnPanel();
+            int teamColor = !registeredExploration || !statsAvailable || currentPokemon == 0 || currentPokemon > maximumPokemon ? 0xFFFF5555 : theme.getTextOnPanel();
             graphics.drawString(font, Component.literal(teamText), textX, textY, teamColor, false);
-            graphics.drawString(font, Component.literal(powerText), rect.getX() + EXPLORATION_POWER_COLUMN_OFFSET,
-                textY, powerColor, false);
+            if (statsAvailable && registeredExploration) {
+                graphics.drawString(font, Component.literal(powerText), rect.getX() + EXPLORATION_POWER_COLUMN_OFFSET,
+                    textY, powerColor, false);
+            }
         } else {
             graphics.drawString(font, Component.literal("Select an exploration from the left panel"), textX, textY,
                 0xFF666666, false);
@@ -322,19 +374,34 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
     }
 
     private void syncExplorationResult() {
-        ExplorationSelectionResultPayload result = ExplorationSelectionClientState.peek(blockPos);
+        if (Minecraft.getInstance().level == null
+                || !Minecraft.getInstance().level.dimension().location().equals(boardDimensionId)) {
+            boardAccessible = false;
+            explorationConfirmed = false;
+            activeExplorationId = null;
+            return;
+        }
+        var status = ExplorationPartyClientState.peek(boardDimensionId, blockPos);
+        if (status != null && status != synchronizedStatus) {
+            synchronizedStatus = status;
+            currentPokemon = status.currentPokemon();
+            maximumPokemon = status.maximumPokemon();
+            currentRank = status.currentRank();
+            routedCurrentPower = status.currentPower();
+            boardAccessible = status.boardAccessible();
+            statsAvailable = status.statsAvailable();
+            portalAvailable = status.portalAvailable();
+            ownerHasPending = status.ownerHasPending();
+            activeExplorationId = status.activeExplorationId();
+            explorationConfirmed = activeExplorationId != null;
+            boardActionPending = false;
+        }
+        ExplorationSelectionResultPayload result = ExplorationSelectionClientState.peek(boardDimensionId, blockPos);
         if (result != null && result != synchronizedResult) {
             synchronizedResult = result;
-            explorationConfirmed = result.accepted();
-            activeExplorationId = result.accepted() ? result.explorationId() : null;
-            routedCurrentPower = result.currentPower();
-            routedRequiredPower = result.requiredPower();
-            routedDurationMinutes = result.durationMinutes();
-            routedStartedAt = result.startedAt();
-            routedExpiresAt = result.expiresAt();
-            if (!result.accepted() && result.reason().toLowerCase(java.util.Locale.ROOT)
-                    .contains("no available portal")) {
-                showError("Portal is busy!");
+            if (!result.accepted()) {
+                showError(result.reason().toLowerCase(java.util.Locale.ROOT).contains("no available portal")
+                    ? "Portal is busy!" : result.reason());
             }
         }
     }
@@ -352,6 +419,7 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
         if (inside(mouseX, mouseY, panel.getX(), tabY, tabWidth, TAB_HEIGHT)) {
             explorationMode = true;
             ExplorationTabState.setExplorationMode(true);
+            requestExplorationStatus();
             callbackInfo.setReturnValue(true);
             return;
         }
@@ -365,11 +433,16 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
             return;
         }
 
+        syncExplorationResult();
+
         if (explorationConfirmed && activeExpRect.contains(mouseX, mouseY)) {
             BoardFooterLayout footer = new BoardFooterLayout(activeExpRect);
             Rect closeAction = footer.action(0, cancelBtnW);
             if (closeAction.contains(mouseX, mouseY)) {
-                cancelExploration();
+                if (!boardActionPending && boardAccessible) {
+                    cancelExploration();
+                }
+                // Do not let a disabled Exploration control reach the native Expedition handler.
                 callbackInfo.setReturnValue(true);
                 return;
             }
@@ -385,10 +458,23 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
                 confirmExploration();
             } else if (!canConfirmExploration()
                     && inside(mouseX, mouseY, confirmX, buttonY, confirmWidth, buttonHeight)) {
-                if (currentPokemon == 0) {
+                if (selectedExpeditionIndex < 0 || selectedExpeditionIndex >= getAvailableExpeditions().size()
+                        || !EXPLORATION_PROFILES.contains(getAvailableExpeditions().get(selectedExpeditionIndex).getExpeditionId())) {
+                    showError("Exploration is not registered");
+                } else if (boardActionPending) {
+                    showError("Waiting for server...");
+                } else if (!boardAccessible) {
+                    showError("Board is unavailable or too far away");
+                } else if (ownerHasPending) {
+                    showError("You already have a pending portal.");
+                } else if (!statsAvailable) {
+                    showError("Party stats are temporarily unavailable. Please try again.");
+                } else if (currentPokemon == 0) {
                     showError("Add pokemon to your party!");
                 } else if (currentPokemon > maximumPokemon) {
                     showError("Max " + maximumPokemon + " pokemon!");
+                } else if (!portalAvailable) {
+                    showError("Portal is busy!");
                 } else {
                     showError("Power Insufficient!");
                 }
@@ -424,13 +510,11 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
         if (!explorationSelected || selectedExpeditionIndex < 0 || selectedExpeditionIndex >= expeditions.size()) {
             return;
         }
-        String expeditionName = expeditions.get(selectedExpeditionIndex).getName();
         PacketDistributor.sendToServer(new ExplorationSelectionPayload(
                 blockPos,
-            ResourceLocation.fromNamespaceAndPath("cobblemon_expeditions", toIdPath(expeditionName))
+                expeditions.get(selectedExpeditionIndex).getExpeditionId()
         ));
-        explorationConfirmed = false;
-        activeExplorationId = null;
+        boardActionPending = true;
     }
 
     private boolean canConfirmExploration() {
@@ -438,84 +522,27 @@ public abstract class ExpeditionBoardScreenMixin extends Screen {
         if (!explorationSelected || selectedExpeditionIndex < 0 || selectedExpeditionIndex >= expeditions.size()) {
             return false;
         }
-        int rank = syncedState == null ? 0 : syncedState.getExpeditionRank();
-        return currentPokemon > 0 && currentPokemon <= maximumPokemon
-            && routedCurrentPower >= rankRequirement(expeditions.get(selectedExpeditionIndex).getExpeditionId(), rank);
+        ResourceLocation selectedId = expeditions.get(selectedExpeditionIndex).getExpeditionId();
+        return EXPLORATION_PROFILES.contains(selectedId) && boardAccessible && statsAvailable && !boardActionPending && !ownerHasPending
+            && currentPokemon > 0 && currentPokemon <= maximumPokemon
+            && portalAvailable
+            && routedCurrentPower >= rankRequirement(selectedId);
     }
 
     private int rankRequirement(ResourceLocation explorationId) {
-        return rankRequirement(explorationId, syncedState == null ? 0 : syncedState.getExpeditionRank());
-    }
-
-    private int rankRequirement(ResourceLocation explorationId, int rank) {
-        int basePower = switch (explorationId.getPath()) {
-            case "forest_forage" -> 45;
-            case "shoreline_survey" -> 60;
-            case "berry_grove_harvest" -> 90;
-            case "cave_delve" -> 120;
-            case "deep_sea_dive" -> 180;
-            case "volcanic_survey" -> 225;
-            case "frozen_ruins" -> 338;
-            case "distortion_rift" -> 450;
-            default -> 0;
-        };
-        double multiplier = switch (Math.max(0, Math.min(10, rank))) {
-            case 0 -> 1.0D;
-            case 1 -> 1.2D;
-            case 2 -> 1.44D;
-            case 3 -> 1.72D;
-            case 4 -> 2.04D;
-            case 5 -> 2.40D;
-            case 6 -> 2.76D;
-            case 7 -> 3.12D;
-            case 8 -> 3.44D;
-            case 9 -> 3.72D;
-            default -> 4.0D;
-        };
-        return (int) Math.round(basePower * multiplier);
-    }
-
-    private int explorationDurationMinutes(ResourceLocation explorationId, int rank) {
-        int minimum = switch (explorationId.getPath()) {
-            case "forest_forage" -> 12;
-            case "shoreline_survey" -> 14;
-            case "berry_grove_harvest" -> 18;
-            case "cave_delve" -> 20;
-            case "deep_sea_dive" -> 28;
-            case "volcanic_survey" -> 30;
-            case "frozen_ruins" -> 36;
-            default -> 40;
-        };
-        int maximum = switch (explorationId.getPath()) {
-            case "forest_forage" -> 28;
-            case "shoreline_survey" -> 32;
-            case "berry_grove_harvest" -> 36;
-            case "cave_delve" -> 40;
-            case "deep_sea_dive" -> 46;
-            case "volcanic_survey" -> 48;
-            case "frozen_ruins" -> 52;
-            default -> 56;
-        };
-        return (int) Math.round(minimum + (maximum - minimum) * Math.max(0, Math.min(10, rank)) / 10.0D);
+        var profile = EXPLORATION_PROFILES.getProfile(explorationId);
+        return profile == null ? 0 : profile.requiredPowerForRank(currentRank);
     }
 
     private void cancelExploration() {
         if (blockPos != null) {
             PacketDistributor.sendToServer(new ExplorationCancelPayload(blockPos));
+            boardActionPending = true;
         }
-        explorationSelected = false;
-        explorationConfirmed = false;
     }
 
     private List<SyncStatePayload.AvailableExpeditionInfo> getAvailableExpeditions() {
         return syncedState == null ? List.of() : getSortedExpeditions(syncedState);
-    }
-
-    private static String toIdPath(String name) {
-        int separator = name.lastIndexOf('.');
-        String path = separator >= 0 ? name.substring(separator + 1) : name;
-        return path.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]+", "_")
-                .replaceAll("^_+|_+$", "");
     }
 
     private static Component displayName(String name) {

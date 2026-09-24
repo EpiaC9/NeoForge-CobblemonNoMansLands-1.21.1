@@ -1,52 +1,68 @@
 package com.epiac9.cobblemonnomanslands.expedition.stats;
 
+import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemonexpeditions.CobblemonExpeditions;
+import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerPlayer;
+import org.slf4j.Logger;
 
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 
 public final class ExplorationPlayerStatsService {
-    public ExplorationPlayerStats get(ServerPlayer player) {
-        if (player == null) {
-            return new ExplorationPlayerStats(0, 0, 0);
-        }
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final long LOG_INTERVAL_NANOS = 60_000_000_000L;
+    private final LongSupplier clock;
+    private final Consumer<Throwable> reportFailure;
+    private boolean hasLoggedFailure;
+    private long lastFailureLog;
 
-        try {
-            Class<?> cobblemonClass = Class.forName("com.cobblemon.mod.common.Cobblemon");
-            Object cobblemon = cobblemonClass.getField("INSTANCE").get(null);
-            Object storage = cobblemonClass.getMethod("getStorage").invoke(cobblemon);
-            Object party = storage.getClass().getMethod("getParty", ServerPlayer.class).invoke(storage, player);
+    public ExplorationPlayerStatsService() {
+        this(System::nanoTime, error -> LOGGER.warn("Unable to read Exploration party/rank stats; Confirm is disabled until lookup recovers", error));
+    }
+
+    ExplorationPlayerStatsService(LongSupplier clock, Consumer<Throwable> reportFailure) {
+        this.clock = clock;
+        this.reportFailure = reportFailure;
+    }
+
+    public ExplorationPlayerStats get(ServerPlayer player) {
+        return player == null ? ExplorationPlayerStats.unavailable() : read(() -> {
+            var party = Objects.requireNonNull(Cobblemon.INSTANCE.getStorage().getParty(player), "Party storage unavailable");
             int power = 0;
             int partyCount = 0;
-            if (party instanceof Iterable<?> members) {
-                for (Object pokemon : members) {
-                    if (pokemon != null) {
-                        partyCount++;
-                        power += pokemonPower(pokemon);
-                    }
+            for (var pokemon : party) {
+                if (pokemon != null) {
+                    partyCount++;
+                    power += pokemonPower(pokemon.getLevel(), pokemon.getIvs().getEffectiveBattleTotal(),
+                        pokemon.getEvs().total());
                 }
             }
+            var data = Objects.requireNonNull(CobblemonExpeditions.INSTANCE.getManager().get(player.getUUID()),
+                "Expedition rank data unavailable");
+            return new ExplorationPlayerStats(data.getExpeditionRank(), power, partyCount);
+        });
+    }
 
-            Class<?> expeditionsClass = Class.forName("com.cobblemonexpeditions.CobblemonExpeditions");
-            Object expeditions = expeditionsClass.getField("INSTANCE").get(null);
-            Object manager = expeditionsClass.getMethod("getManager").invoke(expeditions);
-            Object expeditionData = manager.getClass().getMethod("get", java.util.UUID.class)
-                    .invoke(manager, player.getUUID());
-            int rank = expeditionData == null ? 0
-                    : (int) expeditionData.getClass().getMethod("getExpeditionRank").invoke(expeditionData);
-            return new ExplorationPlayerStats(rank, power, partyCount);
-        } catch (ReflectiveOperationException | RuntimeException exception) {
-            return new ExplorationPlayerStats(0, 0, 0);
+    ExplorationPlayerStats read(Supplier<ExplorationPlayerStats> lookup) {
+        try {
+            return Objects.requireNonNull(lookup.get(), "Stats lookup returned null");
+        } catch (RuntimeException | LinkageError error) {
+            long now = clock.getAsLong();
+            if (!hasLoggedFailure || now - lastFailureLog >= LOG_INTERVAL_NANOS) {
+                hasLoggedFailure = true;
+                lastFailureLog = now;
+                reportFailure.accept(error);
+            }
+            return ExplorationPlayerStats.unavailable();
         }
     }
 
-    private int pokemonPower(Object pokemon) throws ReflectiveOperationException {
-        int level = (int) pokemon.getClass().getMethod("getLevel").invoke(pokemon);
-        Object ivs = pokemon.getClass().getMethod("getIvs").invoke(pokemon);
-        Object evs = pokemon.getClass().getMethod("getEvs").invoke(pokemon);
-        int ivTotal = ivs == null ? 0 : (int) ivs.getClass().getMethod("getEffectiveBattleTotal").invoke(ivs);
-        int evTotal = evs == null ? 0 : (int) evs.getClass().getMethod("total").invoke(evs);
+    static int pokemonPower(int level, int ivTotal, int evTotal) {
         double ivAverage = ivTotal / 6.0D;
-        int ivContribution = (int) Math.round(level * ivAverage / 300.0D);
-        int evContribution = (int) Math.round(evTotal * 10.0D / 510.0D);
-        return level + ivContribution + evContribution;
+        return level + (int) Math.round(level * ivAverage / 300.0D)
+            + (int) Math.round(evTotal * 10.0D / 510.0D);
     }
 }

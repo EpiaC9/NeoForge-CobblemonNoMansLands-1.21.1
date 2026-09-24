@@ -29,7 +29,7 @@ public class DungeonInstanceManager {
         return true;
     } //remove instance
 
-    public boolean hasOccupiedInstance() {
-        return !instances.isEmpty();
-    } //check for occupied/pending lot
+    public boolean hasInstanceOwnedBy(UUID ownerId) {
+        return instances.values().stream().anyMatch(instance -> instance.getOwnerId().equals(ownerId));
+    }
 }

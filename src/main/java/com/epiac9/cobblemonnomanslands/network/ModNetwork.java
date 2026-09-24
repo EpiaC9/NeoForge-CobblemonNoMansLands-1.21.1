@@ -8,7 +8,7 @@ public final class ModNetwork {
     }
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1");
+        PayloadRegistrar registrar = event.registrar("3");
         registrar.playToServer(
                 ExplorationSelectionPayload.TYPE,
                 ExplorationSelectionPayload.STREAM_CODEC,

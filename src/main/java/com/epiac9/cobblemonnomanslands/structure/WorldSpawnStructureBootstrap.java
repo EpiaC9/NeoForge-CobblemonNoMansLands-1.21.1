@@ -12,6 +12,7 @@ public class WorldSpawnStructureBootstrap {
 
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
+        WorldSpawnStructureService.getConnectionRegistry().clear();
         var level = event.getServer().overworld();
         WorldSpawnStructureService.generateAtWorldSpawn(level);
         //place the structure at world spawn

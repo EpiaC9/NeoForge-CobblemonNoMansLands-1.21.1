@@ -2,12 +2,25 @@ package com.epiac9.cobblemonnomanslands.portal.anchor;
 
 import com.epiac9.cobblemonnomanslands.portal.DungeonPortalBlock;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Objects;
 
 public class PortalService {
+    /** Reservations are runtime-only: recover saved portal cells without replacing other blocks. */
+    public void recoverInactivePortal(LevelAccessor level, PortalAnchorState anchor) {
+        for (PortalGeometry.PortalCell cell : PortalGeometry.getInteriorPositions(anchor)) {
+            BlockState state = level.getBlockState(cell.position());
+            if (state.getBlock() instanceof DungeonPortalBlock && state.getValue(DungeonPortalBlock.ACTIVE)) {
+                level.setBlock(cell.position(), state.setValue(DungeonPortalBlock.ACTIVE, false), Block.UPDATE_ALL);
+            }
+        }
+        anchor.setInstanceId(null);
+        anchor.setActive(false);
+    }
+
     public void createInactivePortal(ServerLevel level, PortalAnchorState anchor, BlockState inactivePortalState) {
         updatePortal(level, anchor, inactivePortalState, false);
     }

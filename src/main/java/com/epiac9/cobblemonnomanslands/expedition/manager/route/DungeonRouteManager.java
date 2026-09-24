@@ -36,8 +36,8 @@ public class DungeonRouteManager {
         if (instanceManager == null) {
             return DungeonRouteResult.rejected("Instance Manager was null.");
         } //validate instance
-        if (instanceManager.hasOccupiedInstance()) {
-            return DungeonRouteResult.rejected(request.getDimensionKey(), "Instance already exists.");
+        if (instanceManager.hasInstanceOwnedBy(request.getOwnerID())) {
+            return DungeonRouteResult.rejected(request.getDimensionKey(), "You already have a pending portal.");
         } //validate existing instance
         String pendingInstanceId = UUID.randomUUID().toString();
         String routeId = UUID.randomUUID().toString();

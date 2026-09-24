@@ -6,15 +6,12 @@ import com.epiac9.cobblemonnomanslands.expedition.stats.ExplorationPlayerStatsSe
 import com.epiac9.cobblemonnomanslands.portal.ExpeditionPortalCoordinator;
 import com.epiac9.cobblemonnomanslands.expedition.manager.route.ExpeditionRouteService;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public final class ExplorationSelectionService {
@@ -22,7 +19,7 @@ public final class ExplorationSelectionService {
 
     private final ExpeditionPortalCoordinator coordinator;
     private final ExplorationPlayerStatsService playerStatsService;
-    private final Map<BoardKey, ExplorationSelectionState> activeSelections = new HashMap<>();
+    private final ExplorationReservationRegistry reservations = new ExplorationReservationRegistry();
 
     public ExplorationSelectionService(ExpeditionPortalCoordinator coordinator,
                                        ExplorationPlayerStatsService playerStatsService) {
@@ -40,7 +37,14 @@ public final class ExplorationSelectionService {
             return SelectionResult.rejected("You are too far from the board");
         }
 
+        tick(owner.server);
+        if (reservations.get(owner.getUUID()) != null) {
+            return SelectionResult.rejected("You already have a pending portal.");
+        }
         ExplorationPlayerStats ownerStats = playerStatsService.get(owner);
+        if (!ownerStats.available()) {
+            return SelectionResult.rejected("Party stats are temporarily unavailable. Please try again.");
+        }
         DungeonRouteResult route = coordinator.routeAndActivateExploration(
             owner, explorationId, ownerStats.partyCount(), boardPosition, activePortalState,
             ownerStats.power(), ownerStats.rank());
@@ -50,12 +54,15 @@ public final class ExplorationSelectionService {
 
         var profile = coordinator.getExplorationProfile(explorationId);
         int durationMinutes = profile == null ? 12 : profile.durationMinutesForRank(ownerStats.rank());
-        long startedAt = owner.serverLevel().getGameTime();
+        long startedAt = owner.server.overworld().getGameTime();
         long expiresAt = startedAt + durationMinutes * 60L * 20L;
-        activeSelections.put(new BoardKey(owner.serverLevel().dimension(), boardPosition),
-            new ExplorationSelectionState(
+        ExplorationSelectionState selection = new ExplorationSelectionState(
                 owner.serverLevel().dimension(), boardPosition, owner.getUUID(), explorationId,
-                route.pendingInstanceId(), startedAt, expiresAt));
+                route.pendingInstanceId(), startedAt, expiresAt);
+        if (!reservations.reserve(selection)) {
+            coordinator.deactivateExploration(owner.server, selection);
+            return SelectionResult.rejected("You already have a pending portal.");
+        }
 
         return SelectionResult.acceptedResult(ownerStats, ownerStats.power(),
             profile == null ? 0 : profile.requiredPowerForRank(ownerStats.rank()),
@@ -63,26 +70,27 @@ public final class ExplorationSelectionService {
             ExpeditionRouteService.maximumExplorationPokemon(ownerStats.rank()));
     }
 
-    public ExplorationSelectionState get(ResourceKey<Level> dimension, BlockPos boardPosition) {
-        if (dimension == null || boardPosition == null) {
-            return null;
-        }
-        return activeSelections.get(new BoardKey(dimension, boardPosition));
+    public void tick(MinecraftServer server) {
+        reservations.expire(server.overworld().getGameTime(),
+            selection -> coordinator.deactivateExploration(server, selection));
     }
 
-    public void clearAll() {
-        activeSelections.clear();
+    public ExplorationSelectionState getPending(UUID ownerId) {
+        return reservations.get(ownerId);
+    }
+
+    public void clearAll(MinecraftServer server) {
+        reservations.releaseAll(selection -> coordinator.deactivateExploration(server, selection));
     }
 
     public void cancel(ServerPlayer owner, BlockPos boardPosition) {
         if (owner == null || boardPosition == null) {
             return;
         }
-        BoardKey key = new BoardKey(owner.serverLevel().dimension(), boardPosition);
-        ExplorationSelectionState selection = activeSelections.get(key);
-        if (selection != null && selection.ownerId().equals(owner.getUUID())) {
-            activeSelections.remove(key);
-            coordinator.deactivateExploration(owner, selection);
+        ExplorationSelectionState selection = reservations.get(owner.getUUID());
+        if (selection != null && selection.dimension().equals(owner.serverLevel().dimension())
+                && selection.boardPosition().equals(boardPosition)) {
+            release(owner.server, selection);
         }
     }
 
@@ -90,16 +98,33 @@ public final class ExplorationSelectionService {
         if (owner == null) {
             return;
         }
-        List<BoardKey> ownedKeys = activeSelections.entrySet().stream()
-            .filter(entry -> entry.getValue().ownerId().equals(owner.getUUID()))
-            .map(Map.Entry::getKey)
-            .toList();
-        for (BoardKey key : ownedKeys) {
-            ExplorationSelectionState selection = activeSelections.remove(key);
-            if (selection != null) {
-                coordinator.deactivateExploration(owner, selection);
-            }
+        ExplorationSelectionState selection = reservations.get(owner.getUUID());
+        if (selection != null) {
+            release(owner.server, selection);
         }
+    }
+
+    private void release(MinecraftServer server, ExplorationSelectionState selection) {
+        reservations.release(selection.ownerId(), selection.instanceId(),
+            pending -> coordinator.deactivateExploration(server, pending));
+    }
+
+    public boolean enterPortal(ServerPlayer owner, ServerLevel sourceLevel, BlockPos portalPosition) {
+        if (owner == null || sourceLevel == null || portalPosition == null) {
+            return false;
+        }
+        ExplorationSelectionState selection = reservations.get(owner.getUUID());
+        if (selection != null && owner.server.overworld().getGameTime() >= selection.expiresAt()) {
+            release(owner.server, selection);
+            return false;
+        }
+        if (!coordinator.enterPortal(owner, sourceLevel, portalPosition)) {
+            return false;
+        }
+        if (selection != null) {
+            reservations.complete(selection.ownerId(), selection.instanceId());
+        }
+        return true;
     }
 
     public record SelectionResult(boolean accepted, String reason,
@@ -120,9 +145,4 @@ public final class ExplorationSelectionService {
         }
     }
 
-    private record BoardKey(ResourceKey<Level> dimension, BlockPos boardPosition) {
-        private BoardKey {
-            boardPosition = boardPosition.immutable();
-        }
-    }
 }

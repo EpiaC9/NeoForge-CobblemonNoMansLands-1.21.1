@@ -1,7 +1,7 @@
 package com.epiac9.cobblemonnomanslands.structure;
 
 import com.epiac9.cobblemonnomanslands.marker.base.BaseMarkerBlock;
-import com.epiac9.cobblemonnomanslands.portal.DungeonPortalBlock;
+import com.epiac9.cobblemonnomanslands.portal.anchor.PortalService;
 import com.epiac9.cobblemonnomanslands.portal.anchor.PortalAnchorState;
 import com.epiac9.cobblemonnomanslands.structure.connection.RoomConnection;
 import com.epiac9.cobblemonnomanslands.marker.room.RoomMarkerBlock;
@@ -99,12 +99,10 @@ public final class WorldSpawnStructureState extends SavedData {
                 markers
         );
         List<PortalAnchorState> portals = new ArrayList<>();
+        PortalService portalService = new PortalService();
         for (BlockPos position : portalPositions) {
             PortalAnchorState portal = new PortalAnchorState(position);
-            if (level.getBlockState(position).getBlock() instanceof DungeonPortalBlock
-                    && level.getBlockState(position).getValue(DungeonPortalBlock.ACTIVE)) {
-                portal.setActive(true);
-            }
+            portalService.recoverInactivePortal(level, portal);
             portals.add(portal);
         }
         return new RoomConnection(roomData, portals);

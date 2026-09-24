@@ -48,9 +48,6 @@ public class ExpeditionRouteService {
         if (partySize < 1) {
             return DungeonRouteResult.rejected(profile.dimensionId().toString(), "Add pokemon to your party!");
         }
-        if (partySize > profile.maxMembers()) {
-            return DungeonRouteResult.rejected(profile.dimensionId().toString(), "Exploration party size is over the allowed limit");
-        }
         int maximumPokemon = maximumExplorationPokemon(ownerRank);
         if (partySize > maximumPokemon) {
             return DungeonRouteResult.rejected(profile.dimensionId().toString(),

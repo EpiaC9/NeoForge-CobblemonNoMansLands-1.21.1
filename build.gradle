@@ -20,6 +20,7 @@ sourceSets.main.resources {
 }
 
 repositories {
+    mavenCentral()
     exclusiveContent {
         forRepository {
             maven {
@@ -55,6 +56,7 @@ neoForge {
     runs {
         client {
             client()
+            programArguments.addAll '--username=PlayerTwo'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
         server {
@@ -89,6 +91,9 @@ configurations {
 }
 
 dependencies {
+    // Kotlin is supplied at runtime by Kotlin for Forge; expose its API types to javac.
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib:2.4.0"
+
     // Kotlin for Forge 5.10.0
     implementation "maven.modrinth:ordsPcFz:pp2cY80Q"
 
